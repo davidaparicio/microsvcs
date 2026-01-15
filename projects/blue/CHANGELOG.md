@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/davidaparicio/microsvcs/compare/blue-v2.1.1...blue-v2.1.2) (2026-01-15)
+
+
+### Bug Fixes
+
+* **blue:** adjust percentage ([b8442d6](https://github.com/davidaparicio/microsvcs/commit/b8442d65bc9114924ad5bb9cfc9cd8ee84012344))
+
 ## [2.1.1](https://github.com/davidaparicio/microsvcs/compare/blue-v2.1.0...blue-v2.1.1) (2026-01-15)
 
 
