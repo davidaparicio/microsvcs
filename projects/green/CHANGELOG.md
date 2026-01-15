@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.1.2](https://github.com/davidaparicio/microsvcs/compare/green-v2.1.1...green-v2.1.2) (2026-01-15)
+
+
+### Bug Fixes
+
+* **green:** update styles for consistency and responsiveness ([144b06e](https://github.com/davidaparicio/microsvcs/commit/144b06e5bc39b03f75c5cd4c90b114d3067fdee7))
+* **html:** correct title and structure for better clarity ([144b06e](https://github.com/davidaparicio/microsvcs/commit/144b06e5bc39b03f75c5cd4c90b114d3067fdee7))
+* **js:** adjust reload timeout to 2s ([144b06e](https://github.com/davidaparicio/microsvcs/commit/144b06e5bc39b03f75c5cd4c90b114d3067fdee7))
+
 ## [2.1.1](https://github.com/davidaparicio/microsvcs/compare/green-v2.1.0...green-v2.1.1) (2026-01-15)
 
 
