@@ -17,5 +17,3 @@
 ### Features
 
 * 4 new color projects ([79d899b](https://github.com/davidaparicio/microsvcs/commit/79d899bd094ea7b1067eb2748f1c6184a9dbcd51))
-
-## Changelog

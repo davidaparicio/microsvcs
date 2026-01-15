@@ -16,7 +16,7 @@ commonLabels:
 images:
   - name: davidaparicio/app
     newName: davidaparicio/yellow
-    newTag: "1.0.0-staging"
+    newTag: "2.1.0"
 
 replicas:
   - name: app
