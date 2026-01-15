@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.3](https://github.com/davidaparicio/microsvcs/compare/blue-v2.1.2...blue-v2.1.3) (2026-01-15)
+
+
+### Bug Fixes
+
+* **blue:** new theme ([fe67958](https://github.com/davidaparicio/microsvcs/commit/fe67958b8489c7db9f4af577ea40d81ac46c043a))
+* **blue:** revert distribution ([19b3c81](https://github.com/davidaparicio/microsvcs/commit/19b3c8159da723a192a06cdc81746522a7ab5d43))
+
 ## [2.1.2](https://github.com/davidaparicio/microsvcs/compare/blue-v2.1.1...blue-v2.1.2) (2026-01-15)
 
 
