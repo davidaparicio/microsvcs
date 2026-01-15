@@ -1,49 +1,280 @@
-*{
-    margin:0;
-    padding:0;
-    border:0;
+/* CSS Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
-table{
-    height:100%;
-    position:absolute;
+
+:root {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-header: #242424;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --accent-green: #10b981;
+    --accent-green-bright: #34d399;
+    --border-color: #404040;
+    --shadow-dark: 0 4px 16px rgba(0,0,0,0.4);
+    --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.3);
+    --border-radius: 8px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.red{
-    background-color: red;
-    border: 1px black solid;
+
+body {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Roboto Mono', monospace;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
 }
-.green{
-    background-color: lawngreen;
-    border: 1px black solid;
+
+/* Header Styles - Dark Mode */
+.demo-header {
+    background: linear-gradient(135deg, var(--bg-header) 0%, #1f2937 100%);
+    padding: 32px 24px;
+    text-align: center;
+    border-bottom: 2px solid var(--accent-green);
+    box-shadow: var(--shadow-dark);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
 }
-.grey{
-    background-color: lightgrey;
-    border: 1px black solid;
+
+.demo-title {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
 }
-.orange{
-    background-color: orange;
-    border: 1px black solid;
+
+.system-info {
+    display: inline-block;
+    padding: 14px 28px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--accent-green);
+    box-shadow: var(--shadow-glow);
+    font-size: 1.05em;
+    color: var(--text-secondary);
+    transition: var(--transition);
+    font-family: 'SF Mono', monospace;
 }
-.yellow{
-    background-color: yellow;
-    border: 1px black solid;
+
+.system-info:hover {
+    border-color: var(--accent-green-bright);
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+    transform: translateY(-2px);
 }
-.blue{
-    background-color: blue;
-    border: 1px black solid;
+
+.info-circle {
+    margin-right: 8px;
+    font-size: 1.3em;
+    filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.6));
 }
-.purple{
-    background-color: purple;
-    border: 1px black solid;
+
+.info-text strong {
+    color: var(--accent-green-bright);
+    font-weight: 700;
 }
-.brown{
-    background-color: brown;
-    border: 1px black solid;
+
+/* Grid Container */
+.grid-container {
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 200px);
 }
-.black{
-    background-color: black;
-    border: 1px black solid;
+
+/* Table Styles */
+.color-grid {
+    width: auto;
+    border-collapse: separate;
+    border-spacing: 3px;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-dark);
+    border: 1px solid var(--border-color);
 }
-.white{
-    background-color: white;
-    border: 1px black solid;
+
+.color-grid td {
+    width: 16px;
+    height: 16px;
+    transition: var(--transition);
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+}
+
+.color-grid td:hover {
+    transform: scale(1.2);
+    z-index: 10;
+    filter: brightness(1.4) drop-shadow(0 0 8px currentColor);
+}
+
+/* Color Classes - Vibrant dark mode palette */
+.red {
+    background-color: #ef4444;
+    border: 1px solid #b91c1c;
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.4);
+}
+
+.red:hover {
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+}
+
+.green {
+    background-color: #10b981;
+    border: 1px solid #047857;
+    box-shadow: 0 0 4px rgba(16, 185, 129, 0.4);
+}
+
+.green:hover {
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+}
+
+.grey {
+    background-color: #6b7280;
+    border: 1px solid #4b5563;
+    box-shadow: 0 0 4px rgba(107, 114, 128, 0.3);
+}
+
+.grey:hover {
+    box-shadow: 0 0 12px rgba(107, 114, 128, 0.6);
+}
+
+.orange {
+    background-color: #f97316;
+    border: 1px solid #c2410c;
+    box-shadow: 0 0 4px rgba(249, 115, 22, 0.4);
+}
+
+.orange:hover {
+    box-shadow: 0 0 12px rgba(249, 115, 22, 0.8);
+}
+
+.yellow {
+    background-color: #fbbf24;
+    border: 1px solid #d97706;
+    box-shadow: 0 0 4px rgba(251, 191, 36, 0.4);
+}
+
+.yellow:hover {
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+}
+
+.blue {
+    background-color: #3b82f6;
+    border: 1px solid #1d4ed8;
+    box-shadow: 0 0 4px rgba(59, 130, 246, 0.4);
+}
+
+.blue:hover {
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
+}
+
+.purple {
+    background-color: #a855f7;
+    border: 1px solid #7c3aed;
+    box-shadow: 0 0 4px rgba(168, 85, 247, 0.4);
+}
+
+.purple:hover {
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.8);
+}
+
+.brown {
+    background-color: #92400e;
+    border: 1px solid #78350f;
+    box-shadow: 0 0 4px rgba(146, 64, 14, 0.4);
+}
+
+.brown:hover {
+    box-shadow: 0 0 12px rgba(146, 64, 14, 0.8);
+}
+
+.black {
+    background-color: #0f172a;
+    border: 1px solid #020617;
+    box-shadow: 0 0 4px rgba(15, 23, 42, 0.5);
+}
+
+.black:hover {
+    box-shadow: 0 0 12px rgba(15, 23, 42, 1);
+}
+
+.white {
+    background-color: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 0 4px rgba(241, 245, 249, 0.3);
+}
+
+.white:hover {
+    box-shadow: 0 0 12px rgba(241, 245, 249, 0.6);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .demo-header {
+        padding: 20px 16px;
+    }
+
+    .demo-title {
+        font-size: 1.6em;
+    }
+
+    .system-info {
+        font-size: 0.85em;
+        padding: 10px 16px;
+    }
+
+    .grid-container {
+        padding: 16px;
+    }
+
+    .color-grid {
+        padding: 12px;
+    }
+
+    .color-grid td {
+        width: 12px;
+        height: 12px;
+    }
+}
+
+/* Smooth fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+body {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* Subtle grid background pattern */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: -1;
 }
