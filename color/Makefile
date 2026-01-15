@@ -22,7 +22,8 @@
 all: compile check-format lint test
 
 # Variables and Settings
-version     ?=  $(shell git name-rev --tags --name-only $(shell git rev-parse HEAD))# 0.0.1
+# version     ?=  $(shell git name-rev --tags --name-only $(shell git rev-parse HEAD))# 0.0.1
+version     ?=  $(shell jq -r '."."' .release-please-manifest.json)
 target      ?=  color
 org         ?=  davidaparicio
 authorname  ?=  David Aparicio
@@ -32,13 +33,13 @@ year        ?=  2026
 copyright   ?=  Copyright (c) $(year)
 
 COMMIT      := $(shell git rev-parse HEAD)
-DATE        := $(shell date)## +%Y-%m-%d)
+DATE        := $(shell date +%Y-%m-%dT%H:%M:%S%z)
 IMAGE_NAME  := $(shell basename $(PWD))
 PORTP       := 8080
 PORTT       := 8080
 # https://docs.docker.com/reference/cli/docker/container/run/#publish
 
-PKG_LDFLAGS := github.com/davidaparicio/color/internal
+PKG_LDFLAGS := github.com/davidaparicio/color/internal/version
 GORELEASER_FLAGS ?= --snapshot --clean
 CGO_ENABLED := 0
 export CGO_ENABLED
@@ -47,9 +48,9 @@ compile: mod ## Compile for the local architecture ⚙
 	@echo "Compiling..."
 	go build -ldflags "\
 	-s -w \
-	-X '${PKG_LDFLAGS}.Version=$(version)' \
+	-X '${PKG_LDFLAGS}.Version=v$(version)' \
 	-X '${PKG_LDFLAGS}.BuildDate=$(DATE)' \
-	-X '${PKG_LDFLAGS}.Revision=$(COMMIT)'" \
+	-X '${PKG_LDFLAGS}.GitCommit=$(COMMIT)'" \
 	-o bin/$(target) .
 
 .PHONY: run
@@ -57,17 +58,10 @@ run: ## Run the server
 	@echo "Running...\n"
 	@go run -ldflags "\
 	-s -w \
-	-X '${PKG_LDFLAGS}.Version=$(version)' \
+	-X '${PKG_LDFLAGS}.Version=v$(version)' \
 	-X '${PKG_LDFLAGS}.BuildDate=$(DATE)' \
-	-X '${PKG_LDFLAGS}.Revision=$(COMMIT)'" \
-	cmd/server/server.go
-
-# -X 'main.Version=$(version)' \
-# -X 'main.AuthorName=$(authorname)' \
-# -X 'main.AuthorEmail=$(authoremail)' \
-# -X 'main.Copyright=$(copyright)' \
-# -X 'main.License=$(license)' \
-# -X 'main.Name=$(target)' \
+	-X '${PKG_LDFLAGS}.GitCommit=$(COMMIT)'" \
+	webcolor_ff.go
 
 .PHONY: goreleaser #oldv: 1.18.2 
 goreleaser: ## Run goreleaser directly at the pinned version 🛠
@@ -75,7 +69,7 @@ goreleaser: ## Run goreleaser directly at the pinned version 🛠
 
 .PHONY: dockerbuild
 dockerbuild: ## Docker build 🛠
-	docker build -t $(IMAGE_NAME) .
+	docker build -f docker/Dockerfile -t $(IMAGE_NAME) .
 
 .PHONY: docker
 docker: ## Docker run 🛠
@@ -87,7 +81,7 @@ dockerfull: dockerbuild docker ## Docker build and run 🛠
 .PHONY: mod
 mod: ## Go mod things
 	go mod tidy
-	go get -d ./...
+	go get ./...
 
 .PHONY: install
 install: compile test ## Install the program to /usr/bin 🎉
@@ -95,7 +89,7 @@ install: compile test ## Install the program to /usr/bin 🎉
 	sudo cp bin/$(target) /usr/local/bin/$(target)
 
 .PHONY: test
-test: compile ## 🤓 Run go tests
+test: compile ## Run go tests 🤓
 	@echo "Testing..."
 	go test -v ./...
 
