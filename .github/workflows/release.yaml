@@ -67,6 +67,8 @@ jobs:
             VERSION=${{ needs.release-please.outputs.red--version }}
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             GIT_COMMIT=${{ github.sha }}
+          cache-from: type=gha,scope=red
+          cache-to: type=gha,mode=max,scope=red
 
   publish-blue:
     needs: release-please
@@ -101,6 +103,8 @@ jobs:
             VERSION=${{ needs.release-please.outputs.blue--version }}
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             GIT_COMMIT=${{ github.sha }}
+          cache-from: type=gha,scope=blue
+          cache-to: type=gha,mode=max,scope=blue
 
   publish-green:
     needs: release-please
@@ -135,6 +139,8 @@ jobs:
             VERSION=${{ needs.release-please.outputs.green--version }}
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             GIT_COMMIT=${{ github.sha }}
+          cache-from: type=gha,scope=green
+          cache-to: type=gha,mode=max,scope=green
 
   publish-yellow:
     needs: release-please
@@ -169,3 +175,5 @@ jobs:
             VERSION=${{ needs.release-please.outputs.yellow--version }}
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             GIT_COMMIT=${{ github.sha }}
+          cache-from: type=gha,scope=yellow
+          cache-to: type=gha,mode=max,scope=yellow

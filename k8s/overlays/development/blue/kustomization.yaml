@@ -36,5 +36,8 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/resources/limits/cpu
         value: "100m"
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
     target:
       kind: Deployment
