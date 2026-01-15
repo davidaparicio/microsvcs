@@ -38,3 +38,10 @@ patches:
         value: "500m"
     target:
       kind: Deployment
+  - patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: green.127.0.0.1.nip.io
+    target:
+      kind: Deployment
+      kind: Ingress

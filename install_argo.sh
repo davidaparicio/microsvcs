@@ -24,6 +24,12 @@ echo "Then open your browser to https://localhost:8080"
 kubectl apply -f argocd/project.yaml
 kubectl apply -f argocd/applicationset.yaml
 
+# Install ingress-nginx controller (if not already installed)
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.14.1/deploy/static/provider/cloud/deploy.yaml
+# helm upgrade --install ingress-nginx ingress-nginx \
+#   --repo https://kubernetes.github.io/ingress-nginx \
+#   --namespace ingress-nginx --create-namespace
+
 # Wait for applications to be synced and healthy
 echo "Waiting for applications to be synced and healthy..."
 for app in red-app blue-app green-app yellow-app; do
@@ -41,3 +47,6 @@ kubectl get pods -n blue-development
 
 # Check services
 kubectl get svc -A | grep development
+
+# Check ingresses
+kubectl get ingress -A | grep development
