@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/davidaparicio/microsvcs/compare/yellow-v2.1.1...yellow-v2.1.2) (2026-01-15)
+
+
+### Bug Fixes
+
+* **yellow:** new theme ([ecc1af3](https://github.com/davidaparicio/microsvcs/commit/ecc1af34883c9fcf308445be0552c13adbfc907d))
+
 ## [2.1.1](https://github.com/davidaparicio/microsvcs/compare/yellow-v2.1.0...yellow-v2.1.1) (2026-01-15)
 
 
