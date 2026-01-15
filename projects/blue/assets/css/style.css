@@ -1,49 +1,205 @@
-*{
-    margin:0;
-    padding:0;
-    border:0;
+/* CSS Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
-table{
-    height:100%;
-    position:absolute;
+
+:root {
+    --bg-primary: #f8f9fa;
+    --bg-header: #ffffff;
+    --text-primary: #2c3e50;
+    --text-secondary: #6c757d;
+    --border-color: #e9ecef;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --border-radius: 8px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.red{
-    background-color: red;
-    border: 1px black solid;
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
 }
-.green{
-    background-color: lawngreen;
-    border: 1px black solid;
+
+/* Header Styles - Minimal & Clean */
+.demo-header {
+    background: var(--bg-header);
+    padding: 32px 24px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
 }
-.grey{
-    background-color: lightgrey;
-    border: 1px black solid;
+
+.demo-title {
+    font-size: 2em;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
 }
-.orange{
-    background-color: orange;
-    border: 1px black solid;
+
+.system-info {
+    display: inline-block;
+    padding: 12px 24px;
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    font-size: 1.1em;
+    color: var(--text-secondary);
+    transition: var(--transition);
 }
-.yellow{
-    background-color: yellow;
-    border: 1px black solid;
+
+.system-info:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
-.blue{
-    background-color: blue;
-    border: 1px black solid;
+
+.info-circle {
+    margin-right: 8px;
+    font-size: 1.2em;
 }
-.purple{
-    background-color: purple;
-    border: 1px black solid;
+
+.info-text strong {
+    color: var(--text-primary);
+    font-weight: 600;
 }
-.brown{
-    background-color: brown;
-    border: 1px black solid;
+
+/* Grid Container */
+.grid-container {
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 200px);
 }
-.black{
-    background-color: black;
-    border: 1px black solid;
+
+/* Table Styles */
+.color-grid {
+    width: auto;
+    border-collapse: separate;
+    border-spacing: 3px;
+    padding: 16px;
+    background: var(--bg-header);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
 }
-.white{
-    background-color: white;
-    border: 1px black solid;
+
+.color-grid td {
+    width: 16px;
+    height: 16px;
+    transition: var(--transition);
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+}
+
+.color-grid td:hover {
+    transform: scale(1.15);
+    z-index: 10;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Color Classes - Soft, modern palette */
+.red {
+    background-color: #ef4444;
+    border: 1px solid #dc2626;
+}
+
+.green {
+    background-color: #10b981;
+    border: 1px solid #059669;
+}
+
+.grey {
+    background-color: #cbd5e1;
+    border: 1px solid #94a3b8;
+}
+
+.orange {
+    background-color: #f97316;
+    border: 1px solid #ea580c;
+}
+
+.yellow {
+    background-color: #fbbf24;
+    border: 1px solid #f59e0b;
+}
+
+.blue {
+    background-color: #3b82f6;
+    border: 1px solid #2563eb;
+}
+
+.purple {
+    background-color: #a855f7;
+    border: 1px solid #9333ea;
+}
+
+.brown {
+    background-color: #92400e;
+    border: 1px solid #78350f;
+}
+
+.black {
+    background-color: #1f2937;
+    border: 1px solid #111827;
+}
+
+.white {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .demo-header {
+        padding: 20px 16px;
+    }
+
+    .demo-title {
+        font-size: 1.5em;
+    }
+
+    .system-info {
+        font-size: 0.9em;
+        padding: 10px 16px;
+    }
+
+    .grid-container {
+        padding: 16px;
+    }
+
+    .color-grid {
+        padding: 8px;
+    }
+
+    .color-grid td {
+        width: 12px;
+        height: 12px;
+    }
+}
+
+/* Smooth fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+body {
+    animation: fadeIn 0.5s ease-out;
 }
