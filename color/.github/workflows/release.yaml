@@ -1,13 +1,14 @@
-name: Release
+name: Release (color)
 
 on:
   push:
     branches:
       - main
     paths:
-      - build/Dockerfile
-      - .release-please-manifest.json
-      - CHANGELOG.md
+      - color/docker/Dockerfile
+      - color/.release-please-manifest.json
+      - color/CHANGELOG.md
+      - color/**/**/*
 
 permissions:
   contents: write
