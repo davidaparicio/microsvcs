@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/davidaparicio/microsvcs/compare/red-v2.1.0...red-v2.1.1) (2026-01-15)
+
+
+### Bug Fixes
+
+* **color:** update image names ([1e4fcc2](https://github.com/davidaparicio/microsvcs/commit/1e4fcc249aaf50dd6423729cc001005ccb2d98d3))
+
 ## [2.1.0](https://github.com/davidaparicio/microsvcs/compare/red-v2.0.0...red-v2.1.0) (2026-01-15)
 
 
