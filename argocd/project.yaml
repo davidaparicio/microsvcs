@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: microsvcs
+  namespace: argocd
+spec:
+  description: Microservices color palette applications
+
+  sourceRepos:
+    - 'https://github.com/davidaparicio/microsvcs.git'
+
+  destinations:
+    - namespace: 'red-*'
+      server: https://kubernetes.default.svc
+    - namespace: 'blue-*'
+      server: https://kubernetes.default.svc
+    - namespace: 'green-*'
+      server: https://kubernetes.default.svc
+    - namespace: 'yellow-*'
+      server: https://kubernetes.default.svc
+
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Service
+    - group: apps
+      kind: Deployment
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: networking.k8s.io
+      kind: Ingress
+
+  orphanedResources:
+    warn: true

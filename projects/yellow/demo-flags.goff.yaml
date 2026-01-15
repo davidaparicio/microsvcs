@@ -1,0 +1,38 @@
+color-box:
+  variations:
+    red_var: red
+    orange_var: orange
+    yellow_var: yellow
+    green_var: green
+    blue_var: blue
+    purple_var: purple
+    brown_var: brown
+    black_var: black
+    white_var: white
+    grey_var: grey
+    default_var: grey
+  targeting:
+  # Example: All the users with an ID starting with 9 get green
+  #  - query: key ew "9"
+  #    variation: green_var
+
+  # Example: Target a specific id
+  #  - query: key eq "123e4567-e89b-12d3-a456-426614174000"
+  #    variation: red_var
+  defaultRule:
+    # Distribute colors across all users with percentage splits
+    percentage:
+      green_var: 5
+      red_var: 10
+      default_var: 35
+      # red_var: 15
+      # orange_var: 10
+      # yellow_var: 10
+      # green_var: 15
+      # blue_var: 15
+      # purple_var: 10
+      # brown_var: 8
+      # black_var: 7
+      # white_var: 5
+      # grey_var: 5
+  disable: false

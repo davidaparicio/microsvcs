@@ -1,0 +1,49 @@
+*{
+    margin:0;
+    padding:0;
+    border:0;
+}
+table{
+    height:100%;
+    position:absolute;
+}
+.red{
+    background-color: red;
+    border: 1px black solid;
+}
+.green{
+    background-color: lawngreen;
+    border: 1px black solid;
+}
+.grey{
+    background-color: lightgrey;
+    border: 1px black solid;
+}
+.orange{
+    background-color: orange;
+    border: 1px black solid;
+}
+.yellow{
+    background-color: yellow;
+    border: 1px black solid;
+}
+.blue{
+    background-color: blue;
+    border: 1px black solid;
+}
+.purple{
+    background-color: purple;
+    border: 1px black solid;
+}
+.brown{
+    background-color: brown;
+    border: 1px black solid;
+}
+.black{
+    background-color: black;
+    border: 1px black solid;
+}
+.white{
+    background-color: white;
+    border: 1px black solid;
+}

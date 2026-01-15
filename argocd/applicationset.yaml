@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: microsvcs
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - project: red
+                - project: blue
+                - project: green
+                - project: yellow
+          - list:
+              elements:
+                - env: development
+                # - env: staging
+                # - env: production
+  template:
+    metadata:
+      name: '{{.project}}-{{.env}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/name: '{{.project}}'
+        environment: '{{.env}}'
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: microsvcs
+      source:
+        repoURL: https://github.com/davidaparicio/microsvcs.git
+        targetRevision: HEAD
+        path: 'k8s/overlays/{{.env}}/{{.project}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{.project}}-{{.env}}'
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - PruneLast=true
+          - ApplyOutOfSyncOnly=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+      revisionHistoryLimit: 3
