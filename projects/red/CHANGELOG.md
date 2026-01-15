@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/davidaparicio/microsvcs/compare/red-v2.1.1...red-v2.1.2) (2026-01-15)
+
+
+### Bug Fixes
+
+* **red:** new theme ([4672883](https://github.com/davidaparicio/microsvcs/commit/4672883e6f8f3a814a7cbd0e175c222ee9a931ce))
+
 ## [2.1.1](https://github.com/davidaparicio/microsvcs/compare/red-v2.1.0...red-v2.1.1) (2026-01-15)
 
 
