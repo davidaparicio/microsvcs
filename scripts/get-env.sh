@@ -50,8 +50,8 @@ ${BOLD}Description:${NC}
     running in production, staging, or development.
 
     The script reads the Kustomize configuration files to determine
-    which version/tag is deployed, then checks out that tag in the
-    corresponding service directory.
+    which version/tag is deployed, then restores that version's files
+    for each service directory independently.
 
 ${BOLD}Warning:${NC}
     This will modify your working directory. Make sure you have no
@@ -74,22 +74,12 @@ check_dependencies() {
 check_uncommitted_changes() {
     cd "$REPO_ROOT"
 
-    for service in "${SERVICES[@]}"; do
-        local service_dir="projects/$service"
-
-        if [[ -d "$service_dir" ]]; then
-            cd "$REPO_ROOT/$service_dir"
-
-            if [[ -n $(git status --porcelain) ]]; then
-                echo -e "${RED}Error: Uncommitted changes found in $service${NC}" >&2
-                echo "Please commit or stash your changes first." >&2
-                git status --short >&2
-                exit 1
-            fi
-        fi
-    done
-
-    cd "$REPO_ROOT"
+    if [[ -n $(git status --porcelain projects/) ]]; then
+        echo -e "${RED}Error: Uncommitted changes found in projects/${NC}" >&2
+        echo "Please commit or stash your changes first." >&2
+        git status --short projects/ >&2
+        exit 1
+    fi
 }
 
 # Function to get version for a service in an environment
@@ -108,16 +98,23 @@ get_version() {
     echo "$version"
 }
 
-# Function to find git tag for a version
-find_git_tag() {
+# Function to find git reference for a version
+find_git_ref() {
     local service="$1"
     local version="$2"
 
     cd "$REPO_ROOT"
 
-    # Handle SHA tags (sha-abc123)
-    if [[ "$version" =~ ^sha- ]]; then
-        echo "$version"
+    # Handle SHA tags (sha-abc123) - remove 'sha-' prefix
+    if [[ "$version" =~ ^sha-(.+)$ ]]; then
+        local sha="${BASH_REMATCH[1]}"
+        echo "$sha"
+        return
+    fi
+
+    # Handle 'latest' tag
+    if [[ "$version" == "latest" ]]; then
+        echo "main"
         return
     fi
 
@@ -130,9 +127,10 @@ find_git_tag() {
         return
     fi
 
-    # Try with 'latest' tag
-    if [[ "$version" == "latest" ]]; then
-        echo "main"
+    # Try old format: blue-v2.1.3
+    local old_tag="${service}-v${version}"
+    if git rev-parse "$old_tag" >/dev/null 2>&1; then
+        echo "$old_tag"
         return
     fi
 
@@ -140,73 +138,97 @@ find_git_tag() {
     echo "$version"
 }
 
-# Function to checkout service to version
-checkout_service() {
+# Function to restore service files from a specific git reference
+restore_service() {
     local service="$1"
     local version="$2"
     local service_dir="projects/$service"
 
     if [[ -z "$version" ]]; then
-        echo -e "${YELLOW}⚠ Skipping $service (no version found)${NC}"
-        return
+        echo -e "${YELLOW}⚠  Skipping $service (no version found)${NC}"
+        return 0
     fi
 
     cd "$REPO_ROOT"
 
     if [[ ! -d "$service_dir" ]]; then
-        echo -e "${RED}✗ Service directory not found: $service_dir${NC}"
+        echo -e "${RED}✗  Service directory not found: $service_dir${NC}"
         return 1
     fi
 
     # Find the appropriate git reference
     local git_ref
-    git_ref=$(find_git_tag "$service" "$version")
+    git_ref=$(find_git_ref "$service" "$version")
 
-    echo -e "${CYAN}→ Checking out $service to ${BOLD}$version${NC}${CYAN} (ref: $git_ref)${NC}"
+    echo -e "${CYAN}→  Restoring $service to ${BOLD}$version${NC}${CYAN} (ref: $git_ref)${NC}"
 
-    # Checkout the specific version in the service directory
-    cd "$REPO_ROOT/$service_dir"
+    # Verify the git reference exists
+    if ! git rev-parse "$git_ref" >/dev/null 2>&1; then
+        echo -e "${RED}✗  Git reference not found: $git_ref${NC}"
+        echo -e "${YELLOW}   Trying to find commit with service changes...${NC}"
 
-    if git checkout "$git_ref" -- . 2>/dev/null; then
-        echo -e "${GREEN}✓ Successfully checked out $service to $version${NC}"
-    else
-        echo -e "${RED}✗ Failed to checkout $service to $git_ref${NC}"
-        echo -e "${YELLOW}  Trying to checkout from commit/tag...${NC}"
+        # Try to find a commit that matches this version in the service's CHANGELOG
+        local commit
+        commit=$(git log --all --grep="$service.*$version" --format="%H" -1 2>/dev/null || echo "")
 
-        # Try checking out the entire working tree to that ref
-        if git checkout "$git_ref" 2>/dev/null; then
-            echo -e "${GREEN}✓ Successfully checked out $service to $version${NC}"
+        if [[ -n "$commit" ]]; then
+            git_ref="$commit"
+            echo -e "${GREEN}✓  Found commit: ${commit:0:7}${NC}"
         else
-            echo -e "${RED}✗ Could not find git reference: $git_ref${NC}"
+            echo -e "${RED}✗  Could not find any reference for $service $version${NC}"
             return 1
         fi
     fi
+
+    # Restore files from that reference
+    if git restore --source="$git_ref" -- "$service_dir" 2>/dev/null; then
+        echo -e "${GREEN}✓  Successfully restored $service to $version${NC}"
+
+        # Show what was restored
+        local commit_info
+        commit_info=$(git log "$git_ref" -1 --format="%h - %s" -- "$service_dir" 2>/dev/null || echo "unknown")
+        echo -e "${CYAN}   Last commit: $commit_info${NC}"
+        return 0
+    else
+        echo -e "${RED}✗  Failed to restore $service from $git_ref${NC}"
+        return 1
+    fi
 }
 
-# Function to reset all services to main
+# Function to reset all services to current HEAD
 reset_services() {
-    echo -e "\n${BOLD}${CYAN}Resetting all services to main branch...${NC}\n"
+    echo -e "\n${BOLD}${CYAN}Resetting all services to current branch ($(git branch --show-current))...${NC}\n"
 
     cd "$REPO_ROOT"
+
+    local success_count=0
+    local fail_count=0
 
     for service in "${SERVICES[@]}"; do
         local service_dir="projects/$service"
 
         if [[ -d "$service_dir" ]]; then
-            echo -e "${CYAN}→ Resetting $service to main${NC}"
-            cd "$REPO_ROOT/$service_dir"
+            echo -e "${CYAN}→  Resetting $service${NC}"
 
-            if git checkout main -- . 2>/dev/null; then
-                echo -e "${GREEN}✓ Reset $service to main${NC}"
+            if git restore -- "$service_dir" 2>/dev/null; then
+                echo -e "${GREEN}✓  Reset $service${NC}"
+                success_count=$((success_count + 1))
             else
-                echo -e "${RED}✗ Failed to reset $service${NC}"
+                echo -e "${RED}✗  Failed to reset $service${NC}"
+                fail_count=$((fail_count + 1))
             fi
         fi
     done
 
-    cd "$REPO_ROOT"
+    echo ""
+    echo -e "${BOLD}${CYAN}Summary:${NC}"
+    echo -e "  ${GREEN}✓ Success: $success_count${NC}"
 
-    echo -e "\n${GREEN}${BOLD}All services reset to main branch!${NC}\n"
+    if [[ $fail_count -gt 0 ]]; then
+        echo -e "  ${RED}✗ Failed: $fail_count${NC}"
+    fi
+
+    echo -e "\n${GREEN}${BOLD}All services reset to current branch!${NC}\n"
 }
 
 # Function to checkout environment
@@ -214,7 +236,7 @@ checkout_environment() {
     local env="$1"
 
     echo -e "\n${BOLD}${CYAN}╔══════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BOLD}${CYAN}║  Checking out code for ${env^^} environment              ║${NC}"
+    echo -e "${BOLD}${CYAN}║  Restoring code for ${env^^} environment                 ║${NC}"
     echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════════════════════╝${NC}\n"
 
     local success_count=0
@@ -224,15 +246,16 @@ checkout_environment() {
         local version
         version=$(get_version "$service" "$env")
 
-        if checkout_service "$service" "$version"; then
-            ((success_count++))
+        if restore_service "$service" "$version"; then
+            success_count=$((success_count + 1))
         else
-            ((fail_count++))
+            fail_count=$((fail_count + 1))
         fi
         echo ""
     done
 
     # Summary
+    echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
     echo -e "${BOLD}${CYAN}Summary:${NC}"
     echo -e "  ${GREEN}✓ Success: $success_count${NC}"
 
@@ -241,18 +264,17 @@ checkout_environment() {
     fi
 
     echo ""
-    echo -e "${BOLD}${CYAN}Current service versions:${NC}"
+    echo -e "${BOLD}${CYAN}Current service versions in working directory:${NC}"
 
     cd "$REPO_ROOT"
     for service in "${SERVICES[@]}"; do
         local service_dir="projects/$service"
-        cd "$REPO_ROOT/$service_dir"
 
-        local current_ref
-        current_ref=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-
-        local current_branch
-        current_branch=$(git branch --show-current 2>/dev/null || echo "(detached)")
+        # Get the version from the service's internal version file if it exists
+        local displayed_version="unknown"
+        if [[ -f "$service_dir/internal/version/version.go" ]]; then
+            displayed_version=$(grep 'Version = ' "$service_dir/internal/version/version.go" | cut -d'"' -f2 2>/dev/null || echo "unknown")
+        fi
 
         local service_color
         case "$service" in
@@ -263,12 +285,16 @@ checkout_environment() {
             *)      service_color="$NC" ;;
         esac
 
-        echo -e "  ${service_color}${service}${NC}: $current_ref $current_branch"
+        local env_version
+        env_version=$(get_version "$service" "$env")
+
+        echo -e "  ${service_color}${service}${NC}: ${env_version} (code version: ${displayed_version})"
     done
 
     echo ""
     echo -e "${YELLOW}${BOLD}Note:${NC} Your working directory has been modified."
-    echo -e "       Run ${BOLD}$0 reset${NC} to return to main branch."
+    echo -e "       Files in ${BOLD}projects/*/${NC} now match ${BOLD}$env${NC} environment."
+    echo -e "       Run ${BOLD}$0 reset${NC} to return to current branch state."
     echo ""
 }
 
@@ -286,7 +312,6 @@ main() {
 
     # Handle reset command
     if [[ "$command" == "reset" ]]; then
-        check_uncommitted_changes
         reset_services
         exit 0
     fi
