@@ -236,7 +236,7 @@ checkout_environment() {
     local env="$1"
 
     echo -e "\n${BOLD}${CYAN}╔══════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BOLD}${CYAN}║  Restoring code for ${env^^} environment                 ║${NC}"
+    echo -e "${BOLD}${CYAN}   Restoring code for ${env^^} environment                  ${NC}"
     echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════════════════════╝${NC}\n"
 
     local success_count=0
