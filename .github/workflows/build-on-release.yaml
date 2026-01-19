@@ -62,6 +62,7 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/red:${{ needs.release-please.outputs.red--version }}
             ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/red:latest
+            ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/red:sha-${{ github.sha }}
           platforms: linux/amd64,linux/arm64
           build-args: |
             VERSION=${{ needs.release-please.outputs.red--version }}
@@ -98,6 +99,7 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/blue:${{ needs.release-please.outputs.blue--version }}
             ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/blue:latest
+            ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/blue:sha-${{ github.sha }}
           platforms: linux/amd64,linux/arm64
           build-args: |
             VERSION=${{ needs.release-please.outputs.blue--version }}
@@ -134,6 +136,7 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/green:${{ needs.release-please.outputs.green--version }}
             ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/green:latest
+            ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/green:sha-${{ github.sha }}
           platforms: linux/amd64,linux/arm64
           build-args: |
             VERSION=${{ needs.release-please.outputs.green--version }}
@@ -170,6 +173,7 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/yellow:${{ needs.release-please.outputs.yellow--version }}
             ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/yellow:latest
+            ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/yellow:sha-${{ github.sha }}
           platforms: linux/amd64,linux/arm64
           build-args: |
             VERSION=${{ needs.release-please.outputs.yellow--version }}

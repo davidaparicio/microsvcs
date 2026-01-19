@@ -1,14 +1,14 @@
-# Independent Microservice Release Management
+# Simplified Independent Microservice Release Management
 
-> Complete guide for trunk-based development with independent service releases, GitOps, and feature flags
+> Trunk-based development with independent service releases, GitOps, and feature flags
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Core Principles](#core-principles)
 - [Architecture](#architecture)
-- [Workflow](#workflow)
-- [Manifest System](#manifest-system)
+- [Workflows](#workflows)
+- [Daily Operations](#daily-operations)
 
 ---
 
@@ -16,63 +16,98 @@
 
 This system enables **independent release cycles** for microservices in a monorepo, using:
 
-- **Trunk-Based Development**: All development on `main` branch
-- **Independent Versioning**: Each service has its own version and release schedule
+- **Trunk-Based Development**: All development on `main` branch (no release branches)
+- **Tag-Based Releases**: Git tags mark releases (e.g., `blue/2.1.3`)
+- **Independent Versioning**: Each service releases at its own pace
 - **Immutable Artifacts**: Build once, promote through environments
-- **GitOps**: Environment state tracked in Git manifests
+- **GitOps**: Kustomize files = single source of truth
 - **Feature Flags**: Decouple deployment from feature activation
 
 ### Key Goals
 
-✅ **Fast to understand**: Single source of truth in manifest files  
-✅ **Simple to use**: Automated DEV, manual STG/PRD with clear workflows  
-✅ **Reproducible**: Exact artifact promoted through all environments  
-✅ **Single source of truth**: Git manifests + tags = complete deployment state  
-✅ **Version visibility**: Know exactly what's deployed in each environment
+✅ **Easy to understand**: One branch, one tag scheme, one manifest per service
+✅ **Efficient**: Automated DEV deployment, manual staging/production with approval
+✅ **Elegant**: No branch proliferation, no dual manifests, clean git history
+✅ **Human-readable**: Version numbers in Kustomize files, clear git tags
 
 ---
 
 ## Core Principles
 
-### 1. Independent Service Releases
+### 1. Single Branch Model
 
-**Each service releases at its own pace:**
+```
+main branch (only branch needed)
+    ↓
+  All development happens here
+    ↓
+  Tags mark releases: blue/2.1.3, green/1.5.0, etc.
+```
+
+**Benefits:**
+- No release branches to maintain
+- No GitOps branches needed
+- Simple mental model
+- Clean git history
+
+### 2. Tag-Based Releases
+
+```
+{service}/{version}
+
+Examples:
+  blue/2.1.3
+  green/1.5.0
+  yellow/2.2.0
+  red/3.0.8
+```
+
+**Single, consistent naming scheme** - no confusion with multiple tag types.
+
+### 3. Independent Service Releases
+
+Each service releases at its own pace:
 
 ```yaml
 # Production can have completely different versions
 production:
-  blue:    version: "1.6.1"  deployed: "2025-01-20"  ← Latest
-  green:   version: "1.4.8"  deployed: "2025-01-10"  ← Stable, no changes needed
-  yellow:  version: "2.2.0"  deployed: "2025-01-22"  ← Recent update
-  red:     version: "3.0.8"  deployed: "2024-12-15"  ← Very stable, quarterly releases
+  blue:    2.1.3  (latest release)
+  green:   1.4.8  (stable, no changes needed)
+  yellow:  2.2.0  (recent update)
+  red:     3.0.8  (quarterly releases)
 ```
 
-### 2. Build Once, Deploy Many
+### 4. Build Once, Deploy Many
 
 ```
-main → Build image (sha-abc123)
-         ↓
-    Promote DEV (sha-abc123)     ← Same artifact
-         ↓
-    Promote STG (sha-abc123)     ← Same artifact
-         ↓
-    Promote PRD (sha-abc123)     ← Same artifact
+main → Commit → CI builds image:sha-abc123
+                     ↓
+                 Tag latest
+                     ↓
+           Auto-deploy to DEV (sha-abc123)
+                     ↓
+           Manual promote to STG (2.1.3) ← Same artifact
+                     ↓
+           Manual promote to PRD (2.1.3) ← Same artifact
 ```
 
-### 3. Environment Progression
+### 5. Single Source of Truth
+
+**Kustomize files are the ONLY manifest:**
+
+```yaml
+# k8s/overlays/production/blue/kustomization.yaml
+images:
+- name: davidaparicio/blue
+  newTag: "2.1.3"  # ← Human-readable version
+```
+
+No separate `release-manifests/` directory. ArgoCD reads directly from Kustomize files.
+
+### 6. Environment Progression
 
 ```
 DEV (automatic)  →  STG (manual)  →  PRD (manual + approval)
-```
-
-### 4. GitOps Branches Keep History Clean
-
-```
-main                          ← Clean development history
-release/blue-1.6              ← Long-lived release branches per service
-gitops/dev-auto-update        ← DEV manifest updates (auto)
-gitops/staging-releases       ← STG manifest updates (manual)
-gitops/production-releases    ← PRD manifest updates (manual + approval)
 ```
 
 ---
@@ -80,249 +115,382 @@ gitops/production-releases    ← PRD manifest updates (manual + approval)
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Git Repository                          │
-│                                                                 │
-│  main branch           release/blue-1.6       gitops/*         │
-│  ─────────────         ───────────────        ──────────       │
-│  projects/blue/        (long-lived)           dev.yaml         │
-│  projects/green/       receives patches       staging.yaml     │
-│  projects/yellow/                             production.yaml  │
-│  projects/red/                                                 │
-│                                                                │
-│  [Commit] ──────┐                                              │
-└─────────────────┼──────────────────────────────────────────────┘
-                  │
-                  ▼
-         ┌────────────────┐
-         │   CI Pipeline   │ Build image ONCE
-         │  (GitHub Actions)│ sha-abc123
-         └────────────────┘
-                  │
-                  ├─────────────┬─────────────┬──────────────┐
-                  ▼ (auto)      ▼ (manual)    ▼ (manual+approval)
-           ┌──────────┐   ┌──────────┐   ┌──────────────┐
-           │   DEV    │   │   STG    │   │     PRD      │
-           │ Manifest │   │ Manifest │   │   Manifest   │
-           └──────────┘   └──────────┘   └──────────────┘
-                  │              │               │
-                  ▼              ▼               ▼
-           ┌──────────┐   ┌──────────┐   ┌──────────────┐
-           │ ArgoCD   │   │ ArgoCD   │   │   ArgoCD     │
-           │  Reads   │   │  Reads   │   │   Reads      │
-           └──────────┘   └──────────┘   └──────────────┘
-                  │              │               │
-                  ▼              ▼               ▼
-           ┌──────────┐   ┌──────────┐   ┌──────────────┐
-           │K8s DEV   │   │K8s STG   │   │  K8s PRD     │
-           │Cluster   │   │Cluster   │   │  Cluster     │
-           └──────────┘   └──────────┘   └──────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  Git Repository (single main branch)                    │
+│                                                          │
+│  main ──●──●──●──●──●──●──●                             │
+│          ↑     ↑     ↑                                  │
+│     blue/2.1.3 │  yellow/2.2.0                          │
+│           green/1.5.0                                    │
+│                                                          │
+│  k8s/overlays/{env}/{service}/kustomization.yaml        │
+│    ↑ Single source of truth ↑                           │
+└──────────────────────────────────────────────────────────┘
+         │
+         ▼
+  ┌─────────────┐
+  │  ArgoCD     │  Watches main branch
+  │  (per env)  │  Auto-syncs every 3 min
+  └─────────────┘
+         │
+         ▼
+  ┌─────────────┐
+  │ K8s Cluster │  DEV / STG / PRD
+  └─────────────┘
 ```
+
+**Key Components:**
+
+1. **Services**: `blue`, `green`, `yellow`, `red` (independent Go microservices)
+2. **Environments**: `development`, `staging`, `production`
+3. **Kustomize Overlays**: `k8s/overlays/{env}/{service}/kustomization.yaml` (12 files total)
+4. **ArgoCD ApplicationSet**: Generates 12 applications (4 services × 3 environments)
+5. **GitHub Actions**: 3 workflows (auto-deploy-dev, promote-staging, promote-production)
 
 ---
 
-## Workflow
+## Workflows
 
-### Complete Release Flow
-
-```mermaid
-%%{init: {'theme':'dark'}}%%
-gitGraph
-    commit id: "Initial"
-    
-    commit id: "feat(blue): payment v2" tag: "build:blue-abc"
-    commit id: "feat(green): cache improve" tag: "build:green-def"
-    commit id: "fix(yellow): timeout" tag: "build:yellow-xyz"
-    
-    branch release/blue-1.6
-    checkout release/blue-1.6
-    commit id: "blue: prepare 1.6.0" tag: "blue/1.6.0"
-    
-    checkout main
-    commit id: "feat(red): ML model"
-    
-    branch release/green-1.5
-    checkout release/green-1.5
-    commit id: "green: prepare 1.5.0" tag: "green/1.5.0"
-    
-    checkout main
-    commit id: "fix(blue): bug" type: HIGHLIGHT
-    
-    branch release/yellow-2.2
-    checkout release/yellow-2.2
-    commit id: "yellow: prepare 2.2.0" tag: "yellow/2.2.0"
-    
-    checkout release/blue-1.6
-    cherry-pick id: "fix(blue): bug" tag: "blue/1.6.1"
-    
-    checkout main
-    commit id: "feat(green): new feature"
-    commit id: "feat(blue): another feature"
-```
-
-### Daily Development Flow
+### Workflow 1: Daily Development (Automatic DEV Deployment)
 
 ```bash
-# Developer working on blue service
+# Developer commits to main
 cd projects/blue/
-git checkout main
-git pull
-
-# Make changes
-vim src/payment.js
+vim internal/version/version.go
 git add .
-git commit -m "feat(blue): add new payment method"
+git commit -m "feat(blue): add payment method"
 git push origin main
-
-# CI automatically:
-# 1. Detects blue changed
-# 2. Builds image: registry.example.com/blue:sha-abc123
-# 3. Tags for DEV: registry.example.com/blue:dev
-# 4. Updates gitops/dev-auto-update:release-manifests/dev.yaml
-# 5. ArgoCD syncs to DEV cluster within 3 minutes
-
-# Developer verifies in DEV
-# If good, proceed to staging promotion...
 ```
 
-### Promotion to Staging
+**What happens automatically:**
+
+1. **CI builds image** (`.github/workflows/build-on-commit.yaml`):
+   - Detects `blue` service changed
+   - Builds Docker image: `davidaparicio/blue:sha-abc123`
+   - Tags as `latest`
+   - Pushes to Docker Hub
+
+2. **Auto-deploy to DEV** (`.github/workflows/deploy-dev-auto.yaml`):
+   - Detects `blue` changed
+   - Waits for image `sha-abc123` to be available
+   - Updates `k8s/overlays/development/blue/kustomization.yaml`
+   - Changes `newTag` to `sha-abc123`
+   - Commits to `main` branch
+
+3. **ArgoCD syncs**:
+   - Detects change in kustomization file
+   - Deploys to DEV cluster within 3 minutes
+
+**Developer verifies in DEV**, then proceeds to staging promotion if tests pass.
+
+---
+
+### Workflow 2: Promote to Staging (Manual)
+
+**Trigger:** GitHub Actions UI → "Promote to Staging" workflow
+
+**Inputs:**
+- Service: `blue`
+- Version: `2.1.3` (or leave empty to auto-increment)
+
+**Steps:**
+
+1. **Get current DEV image SHA**:
+   - Reads `k8s/overlays/development/blue/kustomization.yaml`
+   - Extracts current `newTag` (e.g., `sha-abc123`)
+
+2. **Create version tag**:
+   - Creates Git tag: `blue/2.1.3`
+   - Pushes to repository
+
+3. **Retag Docker image**:
+   - Pulls `davidaparicio/blue:sha-abc123`
+   - Tags as `davidaparicio/blue:2.1.3`
+   - Pushes version tag to Docker Hub
+
+4. **Update staging kustomization**:
+   - Edits `k8s/overlays/staging/blue/kustomization.yaml`
+   - Changes `newTag` to `2.1.3`
+   - Commits to `main` branch
+
+5. **ArgoCD syncs staging cluster**
+
+**Result:** Version `2.1.3` deployed to staging, ready for testing.
+
+---
+
+### Workflow 3: Promote to Production (Manual + Approval)
+
+**Trigger:** GitHub Actions UI → "Promote to Production" workflow
+
+**Inputs:**
+- Service: `blue`
+- Version: `2.1.3`
+
+**Steps:**
+
+1. **Validate** (automatic):
+   - Verifies version `2.1.3` exists in staging
+   - Checks staging deployment age (warns if < 24 hours)
+   - Verifies Git tag `blue/2.1.3` exists
+
+2. **Approve** (manual gate):
+   - Uses GitHub Environment protection
+   - Requires approval from authorized reviewers
+   - Shows staging age and version details
+
+3. **Promote** (automatic after approval):
+   - Retags image: `davidaparicio/blue:2.1.3` → `davidaparicio/blue:prd-2.1.3`
+   - Updates `k8s/overlays/production/blue/kustomization.yaml`
+   - Changes `newTag` to `2.1.3`
+   - Commits to `main` with deployment record
+   - Creates milestone tag: `release-prd-20250119`
+
+4. **ArgoCD syncs production cluster**
+
+**Result:** Version `2.1.3` deployed to production with full audit trail.
+
+---
+
+### Workflow 4: Hotfix
+
+**Scenario:** Critical bug found in production (`blue 2.1.3`)
 
 ```bash
-# Manual promotion via GitHub Actions UI
-# Actions → "Promote to Staging" → Run workflow
-
-# Inputs:
-#   service: blue
-#   version: 1.6.0
-#   source_sha: (leave empty to auto-detect from DEV)
-
-# Workflow:
-# 1. Gets current DEV image SHA for blue
-# 2. Creates/updates release branch: release/blue-1.6
-# 3. Creates tag: blue/1.6.0
-# 4. Retags image: sha-abc123 → 1.6.0 (NO REBUILD!)
-# 5. Updates gitops/staging-releases:release-manifests/staging.yaml
-# 6. ArgoCD syncs to STG cluster
-# 7. Notifies team in Microsoft Teams
-```
-
-### Promotion to Production
-
-```bash
-# Manual promotion with approval gate
-# Actions → "Promote to Production" → Run workflow
-
-# Inputs:
-#   service: blue
-#   version: 1.6.0
-
-# Workflow:
-# 1. Validates version exists in staging
-# 2. Checks staging deployment age (warns if < 24h)
-# 3. Waits for approval from 2 reviewers
-# 4. Retags image: sha-abc123 → 1.6.0, prd
-# 5. Updates gitops/production-releases:release-manifests/production.yaml
-# 6. Creates milestone tag: release-prd-20250120
-# 7. ArgoCD syncs to PRD cluster
-# 8. Notifies team in Microsoft Teams
-```
-
-### Hotfix Flow
-
-```bash
-# Bug found in production (blue 1.6.0)
-
-# 1. Fix on main
+# 1. Fix on main (no branching needed!)
 git checkout main
 git commit -m "fix(blue): critical payment bug"
 git push
 
-# 2. Cherry-pick to release branch
-git checkout release/blue-1.6
-git cherry-pick <commit-hash>
-git tag blue/1.6.1
-git push origin release/blue-1.6 --tags
+# 2. CI automatically builds new image
 
-# 3. Promote to staging
-gh workflow run promote-to-staging.yaml \
+# 3. Promote to staging first (always test!)
+gh workflow run promote-staging.yaml \
   -f service=blue \
-  -f version=1.6.1
+  -f version=2.1.4
 
-# 4. Test in staging, then promote to production
-gh workflow run promote-to-production.yaml \
+# 4. Test in staging
+
+# 5. Promote to production
+gh workflow run promote-production.yaml \
   -f service=blue \
-  -f version=1.6.1
+  -f version=2.1.4
+```
+
+**No cherry-picking needed!** Just create a new version tag and follow normal promotion flow.
+
+---
+
+## Daily Operations
+
+### Check What's Deployed
+
+```bash
+# Check development
+yq eval '.images[0].newTag' k8s/overlays/development/blue/kustomization.yaml
+
+# Check staging
+yq eval '.images[0].newTag' k8s/overlays/staging/blue/kustomization.yaml
+
+# Check production
+yq eval '.images[0].newTag' k8s/overlays/production/blue/kustomization.yaml
+```
+
+**Or check all services in one environment:**
+
+```bash
+for service in blue green yellow red; do
+  echo "$service: $(yq eval '.images[0].newTag' k8s/overlays/production/$service/kustomization.yaml)"
+done
+```
+
+### List Available Versions
+
+```bash
+# List all versions for blue service
+git tag -l "blue/*" | sort -V
+
+# List recent releases (all services)
+git tag -l "*/[0-9]*" | sort -V | tail -20
+```
+
+### Rollback in Production
+
+**Option 1: Update kustomization file**
+
+```bash
+# Edit production kustomization
+vim k8s/overlays/production/blue/kustomization.yaml
+
+# Change newTag to previous version
+# newTag: "2.1.2"  # rollback from 2.1.3
+
+git add k8s/overlays/production/blue/kustomization.yaml
+git commit -m "rollback(production): blue 2.1.3 → 2.1.2"
+git push
+
+# ArgoCD auto-syncs within 3 minutes
+```
+
+**Option 2: Use promote-production workflow**
+
+```bash
+# Simply promote the previous version
+gh workflow run promote-production.yaml \
+  -f service=blue \
+  -f version=2.1.2
+```
+
+### Monitor Deployments
+
+```bash
+# Watch ArgoCD applications
+kubectl get applications -n argocd
+
+# Check sync status
+argocd app list
+
+# View application details
+argocd app get blue-production
 ```
 
 ---
 
-## Manifest System
+## Key Files Reference
 
-### Manifest Structure
+### Repository Structure
 
-The manifest is the **single source of truth** for what's deployed in each environment.
+```
+microsvcs/
+├── projects/               # Service source code
+│   ├── blue/
+│   ├── green/
+│   ├── yellow/
+│   └── red/
+├── k8s/
+│   ├── base/              # Shared Kubernetes manifests
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   ├── ingress.yaml
+│   │   └── kustomization.yaml
+│   └── overlays/          # Environment-specific configs
+│       ├── development/   # DEV environment (auto-deployed)
+│       │   ├── blue/kustomization.yaml
+│       │   ├── green/kustomization.yaml
+│       │   ├── yellow/kustomization.yaml
+│       │   └── red/kustomization.yaml
+│       ├── staging/       # STG environment (manual promotion)
+│       │   ├── blue/kustomization.yaml
+│       │   ├── green/kustomization.yaml
+│       │   ├── yellow/kustomization.yaml
+│       │   └── red/kustomization.yaml
+│       └── production/    # PRD environment (manual + approval)
+│           ├── blue/kustomization.yaml
+│           ├── green/kustomization.yaml
+│           ├── yellow/kustomization.yaml
+│           └── red/kustomization.yaml
+├── argocd/
+│   ├── applicationset.yaml  # Generates 12 applications (4 services × 3 envs)
+│   └── project.yaml         # ArgoCD project configuration
+└── .github/workflows/
+    ├── ci.yaml                       # Quality gates (build and test)
+    ├── build-on-commit.yaml          # Build images on every commit
+    ├── build-on-release.yaml         # Build versioned releases
+    ├── deploy-dev-auto.yaml          # Auto-deploy to DEV
+    ├── deploy-staging-manual.yaml    # Manual promotion to STG
+    └── deploy-production-manual.yaml # Manual promotion to PRD (with approval)
+```
+
+### Kustomization File Structure
 
 ```yaml
-# release-manifests/production.yaml (on gitops/production-releases branch)
-environment: production
+# k8s/overlays/production/blue/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 
-services:
-  blue:
-    version: "1.6.1"
-  green:
-    version: "1.4.8"
-  yellow:
-    version: "2.2.0"
-  red:
-    version: "3.0.8"
+namespace: blue-production
+namePrefix: blue-
+
+images:
+- name: davidaparicio/blue
+  newTag: "2.1.3"  # ← VERSION (single source of truth)
+
+resources:
+- ../../../base
+
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 3
+  target:
+    kind: Deployment
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: "128Mi"
+  target:
+    kind: Deployment
 ```
 
-### Manifest Updates
+---
 
-Manifests are **automatically updated by CI/CD** (never manually edited):
+## Comparison: Original vs. Simplified
 
-- **DEV**: Updated on every merge to `main` (for changed services)
-- **STG**: Updated by manual promotion workflow
-- **PRD**: Updated by manual promotion workflow with approval
+| Aspect | Original Design | Simplified Design |
+|--------|----------------|-------------------|
+| **Branches** | `main` + `release/*` + `gitops/*` (9+ branches) | `main` only (1 branch) |
+| **Source of Truth** | `release-manifests/*.yaml` + kustomization | Kustomization only |
+| **Tag Scheme** | 3 schemes (`build:`, `service/`, `release-prd-`) | 1 scheme (`service/version`) |
+| **Hotfix Process** | Cherry-pick to release branch | New tag on main |
+| **Mental Model** | Complex (multiple branch types) | Simple (tags mark releases) |
+| **Files Per Promotion** | 2 (manifest + kustomize) | 1 (kustomization) |
+| **Human Readability** | Check multiple places | Single kustomization file |
+| **Git History** | Cluttered with gitops updates | Clean development history |
 
-### Deployment Flow
-
-```
-1. Manifest Updated (gitops/production-releases)
-   └─> release-manifests/production.yaml: blue version = 1.6.1
-
-2. CI Updates Kustomize
-   └─> k8s/overlays/production/kustomization.yaml: blue newTag = sha-abc123
-
-3. ArgoCD Detects Change
-   └─> Polls Git repository every 3 minutes
-
-4. ArgoCD Syncs
-   └─> Applies Kubernetes manifests to cluster
-
-5. Kubernetes Deploys
-   └─> Rolling update of blue pods with new image
-```
 ---
 
 ## Summary
 
-### Key Principles
+### What Makes This System Simple
 
-1. **Independent Releases**: Each service (blue, green, yellow, red) releases at its own pace
-2. **Immutable Artifacts**: Build image once, promote through environments (no rebuilds)
-3. **Single Source of Truth**: Git manifests show exact deployment state
-4. **Clean History**: GitOps branches keep manifest updates separate from dev history
-5. **Feature Flags**: Deploy code ≠ activate features (gradual rollouts, instant rollback)
+1. **One branch** - All work on `main`, no release branches, no gitops branches
+2. **One tag scheme** - `service/version` for everything
+3. **One manifest** - Kustomize files are the single source of truth
+4. **One workflow pattern** - Same promotion flow for all services
 
-### Environment Flow
+### What Makes This System Efficient
 
-```
-DEV (automatic on merge to main)
-  ↓
-STG (manual promotion via GitHub Actions)
-  ↓
-PRD (manual promotion with approval gates)
-```
+1. **Automated DEV** - Zero manual steps for development environment
+2. **Manual gates** - Staging and production require explicit promotion
+3. **Parallel CI** - Each service builds independently
+4. **Fast rollback** - Just update one file and commit
+
+### What Makes This System Elegant
+
+1. **No branch proliferation** - Single `main` branch keeps git history clean
+2. **No dual manifests** - One file per service per environment
+3. **Clear separation** - DEV (automatic) vs. STG/PRD (manual)
+4. **Audit trail** - Git tags + commits = complete deployment history
+
+### What Makes This System Human-Readable
+
+1. **Version visibility** - `newTag: "2.1.3"` in kustomization files
+2. **Consistent naming** - `blue/2.1.3`, `green/1.5.0`, etc.
+3. **Clear file structure** - `k8s/overlays/{env}/{service}/kustomization.yaml`
+4. **Simple commands** - Standard git and kubectl operations
+
+---
 
 **Remember**: The goal is **independent service releases** with complete visibility and reproducibility. Each service moves at its own pace, with feature flags coordinating cross-service changes when needed.
+
+**Getting Started:**
+
+1. Commit changes to a service in `projects/`
+2. Watch it auto-deploy to DEV
+3. Promote to staging when ready: GitHub Actions → "Promote to Staging"
+4. Test in staging
+5. Promote to production when validated: GitHub Actions → "Promote to Production"
+6. Approve the deployment
+
+That's it!
