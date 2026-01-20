@@ -72,6 +72,7 @@ func main() {
 	}
 
 	e.GET("/", apiHandler)
+	e.GET("/version", versionHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -147,4 +148,12 @@ func apiHandler(c echo.Context) error {
 	}
 
 	return c.Render(http.StatusOK, "template.html", pageData)
+}
+
+func versionHandler(c echo.Context) error {
+	response := map[string]string{
+		"version": version.Version,
+		"commit":  version.GitCommit,
+	}
+	return c.JSON(http.StatusOK, response)
 }
