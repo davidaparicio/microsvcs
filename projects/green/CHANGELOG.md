@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/davidaparicio/microsvcs/compare/green/2.3.1...green/2.4.0) (2026-01-20)
+
+
+### Features
+
+* **color:** version endpoint ([#19](https://github.com/davidaparicio/microsvcs/issues/19)) ([a324e2c](https://github.com/davidaparicio/microsvcs/commit/a324e2cb0926b2f2df59eb6d048cc4ab81469b44))
+
 ## [2.3.1](https://github.com/davidaparicio/microsvcs/compare/green/2.3.0...green/2.3.1) (2026-01-20)
 
 
