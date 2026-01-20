@@ -1,0 +1,95 @@
+name: Build Images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'projects/**'
+
+env:
+  REGISTRY: docker.io
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_changes: ${{ steps.set-matrix.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed projects
+        id: set-matrix
+        run: |
+          BASE_SHA=${{ github.event.before }}
+          HEAD_SHA=${{ github.sha }}
+
+          PROJECTS=()
+          for project in red blue green yellow; do
+            if git diff --name-only $BASE_SHA $HEAD_SHA | grep -q "projects/$project/"; then
+              PROJECTS+=("\"$project\"")
+            fi
+          done
+
+          if [ ${#PROJECTS[@]} -eq 0 ]; then
+            echo "matrix={\"project\":[]}" >> $GITHUB_OUTPUT
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "matrix={\"project\":[$(IFS=,; echo "${PROJECTS[*]}")]}" >> $GITHUB_OUTPUT
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-push:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate short SHA
+        id: sha
+        run: echo "short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      - name: Build and push ${{ matrix.project }}
+        uses: docker/build-push-action@v6
+        with:
+          context: projects/${{ matrix.project }}
+          file: projects/${{ matrix.project }}/docker/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.project }}:sha-${{ steps.sha.outputs.short }}
+            ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.project }}:latest
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            VERSION=dev-${{ steps.sha.outputs.short }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            GIT_COMMIT=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.project }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.project }}
+
+      - name: Summary
+        run: |
+          echo "### 🐳 Built and Pushed Image" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Service:** ${{ matrix.project }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.project }}:sha-${{ steps.sha.outputs.short }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This image will be automatically deployed to DEV environment." >> $GITHUB_STEP_SUMMARY
