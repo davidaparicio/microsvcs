@@ -47,8 +47,20 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ inputs.service }}" ]; then
             echo "matrix={\"service\":[\"${{ inputs.service }}\"]}" >> $GITHUB_OUTPUT
           else
-            services=$(echo '${{ steps.filter.outputs.changes }}' | jq -R -s -c 'split("\n") | map(select(length > 0))')
-            echo "matrix={\"service\":$services}" >> $GITHUB_OUTPUT
+            # Debug: show what we received from paths-filter
+            echo "Raw changes output: ${{ steps.filter.outputs.changes }}"
+
+            # Parse the JSON array output from dorny/paths-filter
+            changes='${{ steps.filter.outputs.changes }}'
+            if [ -n "$changes" ] && [ "$changes" != "[]" ]; then
+              # Convert newline-separated list to JSON array
+              services=$(echo "$changes" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "Parsed services: $services"
+              echo "matrix={\"service\":$services}" >> $GITHUB_OUTPUT
+            else
+              echo "No changes detected"
+              echo "matrix={\"service\":[]}" >> $GITHUB_OUTPUT
+            fi
           fi
 
   deploy-dev:
