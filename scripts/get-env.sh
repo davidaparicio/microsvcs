@@ -270,12 +270,6 @@ checkout_environment() {
     for service in "${SERVICES[@]}"; do
         local service_dir="projects/$service"
 
-        # Get the version from the service's internal version file if it exists
-        local displayed_version="unknown"
-        if [[ -f "$service_dir/internal/version/version.go" ]]; then
-            displayed_version=$(grep 'Version = ' "$service_dir/internal/version/version.go" | cut -d'"' -f2 2>/dev/null || echo "unknown")
-        fi
-
         local service_color
         case "$service" in
             blue)   service_color="$BLUE" ;;
@@ -288,7 +282,7 @@ checkout_environment() {
         local env_version
         env_version=$(get_version "$service" "$env")
 
-        echo -e "  ${service_color}${service}${NC}: ${env_version} (code version: ${displayed_version})"
+        echo -e "  ${service_color}${service}${NC}: ${env_version}"
     done
 
     echo ""
