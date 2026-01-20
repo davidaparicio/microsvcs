@@ -2,6 +2,13 @@ FROM golang:1.25-alpine3.23@sha256:ac09a5f469f307e5da71e766b0bd59c9c49ea460a528c
 
 WORKDIR /app
 
+# Copy dependency files first (cached unless go.mod/go.sum change)
+COPY go.mod go.sum ./
+
+# Download dependencies (cached layer)
+RUN go mod download
+
+# Copy source code (changes frequently)
 COPY . .
 
 # Build arguments for version information
