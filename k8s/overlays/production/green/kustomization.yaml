@@ -16,7 +16,7 @@ commonLabels:
 images:
   - name: davidaparicio/app
     newName: davidaparicio/green
-    newTag: "2.1.0"
+    newTag: "2.3.0"
 
 replicas:
   - name: app
