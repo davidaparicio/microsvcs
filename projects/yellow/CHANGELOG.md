@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/davidaparicio/microsvcs/compare/yellow/2.3.0...yellow/2.3.1) (2026-01-20)
+
+
+### Bug Fixes
+
+* **color:** 80-20 rule ([#16](https://github.com/davidaparicio/microsvcs/issues/16)) ([5135ed0](https://github.com/davidaparicio/microsvcs/commit/5135ed09d36069b2459e5a0b60a5eff88b55f9f4))
+
 ## [2.3.0](https://github.com/davidaparicio/microsvcs/compare/yellow/2.2.0...yellow/2.3.0) (2026-01-20)
 
 
