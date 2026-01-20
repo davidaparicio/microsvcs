@@ -44,6 +44,6 @@ patches:
   - patch: |-
       - op: replace
         path: /spec/rules/0/host
-        value: green.127.0.0.1.nip.io
+        value: green.dev.127.0.0.1.nip.io
     target:
       kind: Ingress
