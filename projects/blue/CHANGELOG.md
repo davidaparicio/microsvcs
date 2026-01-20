@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/davidaparicio/microsvcs/compare/blue-v2.1.3...blue/2.2.0) (2026-01-20)
+
+
+### Features
+
+* **color:** FF update ([ed84bdb](https://github.com/davidaparicio/microsvcs/commit/ed84bdb2764322a3ebaf81c0e834cebe2b7f72ee))
+
 ## [2.1.3](https://github.com/davidaparicio/microsvcs/compare/blue-v2.1.2...blue-v2.1.3) (2026-01-15)
 
 

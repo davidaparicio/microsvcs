@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/davidaparicio/microsvcs/compare/red-v2.1.2...red/2.2.0) (2026-01-20)
+
+
+### Features
+
+* **color:** FF update ([ed84bdb](https://github.com/davidaparicio/microsvcs/commit/ed84bdb2764322a3ebaf81c0e834cebe2b7f72ee))
+
 ## [2.1.2](https://github.com/davidaparicio/microsvcs/compare/red-v2.1.1...red-v2.1.2) (2026-01-15)
 
 
