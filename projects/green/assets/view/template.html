@@ -14,6 +14,7 @@
     <div class="system-info">
         <span class="info-circle">{{.SystemInfo.Circle}}</span>
         <span class="info-text">This is <strong>{{.SystemInfo.DisplayName}}</strong> on {{.SystemInfo.OS}}/{{.SystemInfo.Arch}}, serving {{.SystemInfo.Path}} for {{.SystemInfo.RemoteAddr}}</span>
+        <span class="info-text">Service version: <strong>{{.SystemInfo.ServiceVersion}}</strong> based on the commit: <strong>{{.SystemInfo.ServiceCommit}}</strong></span>
     </div>
 </header>
 

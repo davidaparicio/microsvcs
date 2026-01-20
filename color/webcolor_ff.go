@@ -31,14 +31,16 @@ type PageData struct {
 
 // SystemInfo holds system and request information
 type SystemInfo struct {
-	DisplayName string
-	OS          string
-	Arch        string
-	Path        string
-	RemoteAddr  string
-	Namespace   string
-	PodColor    string
-	Circle      string
+	DisplayName    string
+	OS             string
+	Arch           string
+	Path           string
+	RemoteAddr     string
+	Namespace      string
+	PodColor       string
+	Circle         string
+	ServiceVersion string
+	ServiceCommit  string
 }
 
 func main() {
@@ -127,14 +129,16 @@ func apiHandler(c echo.Context) error {
 	circles := getCircle(namespace) + getCircle(podColor)
 
 	sysInfo := SystemInfo{
-		DisplayName: displayName,
-		OS:          runtime.GOOS,
-		Arch:        runtime.GOARCH,
-		Path:        c.Request().URL.Path,
-		RemoteAddr:  c.Request().RemoteAddr,
-		Namespace:   namespace,
-		PodColor:    podColor,
-		Circle:      circles,
+		DisplayName:    displayName,
+		OS:             runtime.GOOS,
+		Arch:           runtime.GOARCH,
+		Path:           c.Request().URL.Path,
+		RemoteAddr:     c.Request().RemoteAddr,
+		Namespace:      namespace,
+		PodColor:       podColor,
+		Circle:         circles,
+		ServiceVersion: version.Version,
+		ServiceCommit:  version.GitCommit,
 	}
 
 	pageData := PageData{
