@@ -41,7 +41,6 @@ patches:
   - patch: |-
       - op: replace
         path: /spec/rules/0/host
-        value: yellow.127.0.0.1.nip.io
+        value: yellow.prd.127.0.0.1.nip.io
     target:
-      kind: Deployment
       kind: Ingress
