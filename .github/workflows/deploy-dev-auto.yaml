@@ -44,11 +44,22 @@ jobs:
       - name: Set matrix for changed services
         id: set-matrix
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ inputs.service }}" ]; then
-            echo "matrix={\"service\":[\"${{ inputs.service }}\"]}" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            SERVICE="${{ inputs.service }}"
+            if [ -n "$SERVICE" ]; then
+              echo "matrix={\"service\":[\"$SERVICE\"]}" >> $GITHUB_OUTPUT
+            else
+              # Empty service input, deploy nothing
+              echo "matrix={\"service\":[]}" >> $GITHUB_OUTPUT
+            fi
           else
-            # The changes output is already a JSON array, use it directly
-            echo "matrix={\"service\":${{ steps.filter.outputs.changes }}}" >> $GITHUB_OUTPUT
+            # Auto-detect: use changes from paths-filter
+            CHANGES='${{ steps.filter.outputs.changes }}'
+            if [ "$CHANGES" == "[]" ] || [ -z "$CHANGES" ]; then
+              echo "matrix={\"service\":[]}" >> $GITHUB_OUTPUT
+            else
+              echo "matrix={\"service\":$CHANGES}" >> $GITHUB_OUTPUT
+            fi
           fi
 
   deploy-dev:
