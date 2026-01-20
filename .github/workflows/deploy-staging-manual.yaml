@@ -88,12 +88,13 @@ jobs:
             git config --global user.name "github-actions[bot]"
             git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-            git tag -a "$TAG" -m "Release ${{ inputs.service }} ${{ steps.version.outputs.version }} to staging
+            MESSAGE="Release ${{ inputs.service }} ${{ steps.version.outputs.version }} to staging
 
-Promoted from development.
-Source SHA: ${{ steps.get-dev-sha.outputs.sha }}
-Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          Promoted from development.
+          Source SHA: ${{ steps.get-dev-sha.outputs.sha }}
+          Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
+            git tag -a "$TAG" -m "$MESSAGE"
             git push origin "$TAG"
             echo "Created tag: $TAG"
           fi
@@ -142,13 +143,15 @@ Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           fi
 
           git add k8s/overlays/staging/${{ inputs.service }}/kustomization.yaml
-          git commit -m "deploy(staging): ${{ inputs.service }} ${{ steps.version.outputs.version }}
 
-Promoted from development to staging.
-Source SHA: ${{ steps.get-dev-sha.outputs.sha }}
-Git Tag: ${{ inputs.service }}/${{ steps.version.outputs.version }}
-Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          COMMIT_MSG="deploy(staging): ${{ inputs.service }} ${{ steps.version.outputs.version }}
 
+          Promoted from development to staging.
+          Source SHA: ${{ steps.get-dev-sha.outputs.sha }}
+          Git Tag: ${{ inputs.service }}/${{ steps.version.outputs.version }}
+          Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          git commit -m "$COMMIT_MSG"
           git push origin main
 
       - name: Summary

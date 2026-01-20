@@ -122,11 +122,13 @@ jobs:
           fi
 
           git add k8s/overlays/development/${{ matrix.service }}/kustomization.yaml
-          git commit -m "deploy(dev): ${{ matrix.service }} ${{ steps.get-sha.outputs.sha }}
 
-Auto-deployed to development environment by GitHub Actions.
-Commit: ${{ github.sha }}"
+          COMMIT_MSG="deploy(dev): ${{ matrix.service }} ${{ steps.get-sha.outputs.sha }}
 
+          Auto-deployed to development environment by GitHub Actions.
+          Commit: ${{ github.sha }}"
+
+          git commit -m "$COMMIT_MSG"
           git push origin main
 
       - name: Summary

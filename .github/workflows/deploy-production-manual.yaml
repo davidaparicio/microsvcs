@@ -187,14 +187,16 @@ jobs:
           fi
 
           git add k8s/overlays/production/${{ inputs.service }}/kustomization.yaml
-          git commit -m "deploy(production): ${{ inputs.service }} ${{ inputs.version }}
 
-Promoted from staging to production.
-Approved by: ${{ github.actor }}
-Staging deployment age: ${{ needs.validate.outputs.staging_age_hours }} hours
-Git Tag: ${{ inputs.service }}/${{ inputs.version }}
-Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          COMMIT_MSG="deploy(production): ${{ inputs.service }} ${{ inputs.version }}
 
+          Promoted from staging to production.
+          Approved by: ${{ github.actor }}
+          Staging deployment age: ${{ needs.validate.outputs.staging_age_hours }} hours
+          Git Tag: ${{ inputs.service }}/${{ inputs.version }}
+          Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          git commit -m "$COMMIT_MSG"
           git push origin main
 
       - name: Create milestone tag
@@ -208,11 +210,12 @@ Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{
           if git rev-parse "$MILESTONE_TAG" >/dev/null 2>&1; then
             echo "Milestone tag $MILESTONE_TAG already exists"
           else
-            git tag -a "$MILESTONE_TAG" -m "Production deployment milestone: $(date -u +%Y-%m-%d)
+            TAG_MSG="Production deployment milestone: $(date -u +%Y-%m-%d)
 
-Services deployed:
-- ${{ inputs.service }}: ${{ inputs.version }}"
+          Services deployed:
+          - ${{ inputs.service }}: ${{ inputs.version }}"
 
+            git tag -a "$MILESTONE_TAG" -m "$TAG_MSG"
             git push origin "$MILESTONE_TAG"
             echo "Created milestone tag: $MILESTONE_TAG"
           fi
