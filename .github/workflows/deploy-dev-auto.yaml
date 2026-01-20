@@ -47,8 +47,8 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ inputs.service }}" ]; then
             echo "matrix={\"service\":[\"${{ inputs.service }}\"]}" >> $GITHUB_OUTPUT
           else
-            services=$(echo '${{ steps.filter.outputs.changes }}' | jq -R -s -c 'split("\n") | map(select(length > 0))')
-            echo "matrix={\"service\":$services}" >> $GITHUB_OUTPUT
+            # The changes output is already a JSON array, use it directly
+            echo "matrix={\"service\":${{ steps.filter.outputs.changes }}}" >> $GITHUB_OUTPUT
           fi
 
   deploy-dev:
