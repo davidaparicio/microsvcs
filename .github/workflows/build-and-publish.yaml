@@ -174,5 +174,5 @@ jobs:
             echo "- \`$USERNAME/$PROJECT:sha-$SHA\`" >> $GITHUB_STEP_SUMMARY
             echo "- \`$USERNAME/$PROJECT:latest\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "This image will be automatically deployed to DEV environment." >> $GITHUB_STEP_SUMMARY
+            echo "Kargo will detect this image and promote to DEV automatically." >> $GITHUB_STEP_SUMMARY
           fi

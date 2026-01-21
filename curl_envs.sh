@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euxo pipefail
+#set -euxo pipefail
 
 # Development
 curl http://red.dev.127.0.0.1.nip.io/version

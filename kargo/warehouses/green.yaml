@@ -1,0 +1,11 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: green
+  namespace: microsvcs
+spec:
+  subscriptions:
+    - image:
+        repoURL: docker.io/davidaparicio/green
+        semverConstraint: "*"
+        discoveryLimit: 10
