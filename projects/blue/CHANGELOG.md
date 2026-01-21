@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/davidaparicio/microsvcs/compare/blue/2.4.0...blue/2.5.0) (2026-01-21)
+
+
+### Features
+
+* **color:** healthz endpoint ([#21](https://github.com/davidaparicio/microsvcs/issues/21)) ([7574c27](https://github.com/davidaparicio/microsvcs/commit/7574c27147c4e65e90bc09ea82a249078cbb748f))
+
 ## [2.4.0](https://github.com/davidaparicio/microsvcs/compare/blue/2.3.1...blue/2.4.0) (2026-01-20)
 
 
