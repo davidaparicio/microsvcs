@@ -11,5 +11,6 @@ nodes:
     # image: kindest/node:v1.23.17
 
 # kind create cluster --config k8s/kind-config.yaml
+# kind export kubeconfig --name microsvcs
 # kind load docker-image $(IMAGE_NAME) --name $(KIND_CLUSTER)
 # OR: https://kind.sigs.k8s.io/docs/user/local-registry/

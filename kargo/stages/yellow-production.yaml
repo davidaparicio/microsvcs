@@ -1,0 +1,20 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: yellow-production
+  namespace: microsvcs
+spec:
+  subscriptions:
+    upstreamStages:
+      - name: yellow-staging
+  promotionMechanisms:
+    gitRepoUpdates:
+      - repoURL: https://github.com/davidaparicio/microsvcs.git
+        writeBranch: main
+        kustomize:
+          images:
+            - image: docker.io/davidaparicio/yellow
+              path: k8s/overlays/production/yellow
+    argoCDAppUpdates:
+      - appName: yellow-production
+        appNamespace: argocd
