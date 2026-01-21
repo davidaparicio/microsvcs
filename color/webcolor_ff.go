@@ -73,6 +73,7 @@ func main() {
 
 	e.GET("/", apiHandler)
 	e.GET("/version", versionHandler)
+	e.GET("/healthz", healthzHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -156,4 +157,8 @@ func versionHandler(c echo.Context) error {
 		"commit":  version.GitCommit,
 	}
 	return c.JSON(http.StatusOK, response)
+}
+
+func healthzHandler(c echo.Context) error {
+	return c.NoContent(http.StatusOK)
 }
