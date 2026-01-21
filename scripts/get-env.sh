@@ -21,8 +21,10 @@ readonly BOLD='\033[1m'
 readonly NC='\033[0m' # No Color
 
 # Configuration
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+readonly REPO_ROOT
 readonly SERVICES=("blue" "green" "yellow" "red")
 readonly ENVIRONMENTS=("development" "staging" "production")
 
@@ -311,7 +313,7 @@ main() {
     fi
 
     # Validate environment
-    if [[ ! " ${ENVIRONMENTS[@]} " =~ " ${command} " ]]; then
+    if [[ ! " ${ENVIRONMENTS[*]} " =~ \ ${command}\  ]]; then
         echo -e "${RED}Error: Invalid environment '$command'${NC}" >&2
         echo "Valid environments: development, staging, production, reset" >&2
         echo "" >&2

@@ -1,0 +1,15 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: microsvcs
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 30080
+        protocol: TCP
+    # Uncomment to use a specific Kubernetes version for testing
+    # image: kindest/node:v1.23.17
+
+# kind create cluster --config k8s/kind-config.yaml
+# kind load docker-image $(IMAGE_NAME) --name $(KIND_CLUSTER)
+# OR: https://kind.sigs.k8s.io/docs/user/local-registry/
