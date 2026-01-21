@@ -1,0 +1,19 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: blue-development
+  namespace: microsvcs
+spec:
+  subscriptions:
+    warehouse: blue
+  promotionMechanisms:
+    gitRepoUpdates:
+      - repoURL: https://github.com/davidaparicio/microsvcs.git
+        writeBranch: main
+        kustomize:
+          images:
+            - image: docker.io/davidaparicio/blue
+              path: k8s/overlays/development/blue
+    argoCDAppUpdates:
+      - appName: blue-development
+        appNamespace: argocd

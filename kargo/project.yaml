@@ -1,0 +1,30 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: microsvcs
+spec:
+  promotionPolicies:
+    - stage: red-development
+      autoPromotionEnabled: true
+    - stage: blue-development
+      autoPromotionEnabled: true
+    - stage: green-development
+      autoPromotionEnabled: true
+    - stage: yellow-development
+      autoPromotionEnabled: true
+    - stage: red-staging
+      autoPromotionEnabled: false
+    - stage: blue-staging
+      autoPromotionEnabled: false
+    - stage: green-staging
+      autoPromotionEnabled: false
+    - stage: yellow-staging
+      autoPromotionEnabled: false
+    - stage: red-production
+      autoPromotionEnabled: false
+    - stage: blue-production
+      autoPromotionEnabled: false
+    - stage: green-production
+      autoPromotionEnabled: false
+    - stage: yellow-production
+      autoPromotionEnabled: false
