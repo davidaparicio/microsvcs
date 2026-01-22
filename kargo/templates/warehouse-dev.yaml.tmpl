@@ -8,7 +8,7 @@ spec:
     - image:
         repoURL: {{.dockerRegistry}}/{{.service}}
         imageSelectionStrategy: NewestBuild
-        platform: linux/amd64
+        platform: {{.warehouse.platform}}
         discoveryLimit: {{.warehouse.discoveryLimit}}
         tagSelection:
           allowTags:

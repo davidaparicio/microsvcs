@@ -8,5 +8,5 @@ spec:
     - image:
         repoURL: {{.dockerRegistry}}/{{.service}}
         semverConstraint: {{.stagingEnvironment.semverConstraint}}
-        platform: linux/amd64
+        platform: {{.warehouse.platform}}
         discoveryLimit: {{.warehouse.discoveryLimit}}
