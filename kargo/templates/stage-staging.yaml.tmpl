@@ -1,0 +1,19 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: {{.service}}-staging
+  namespace: {{.namespace}}
+spec:
+  subscriptions:
+    warehouse: {{.service}}-releases
+  promotionMechanisms:
+    gitRepoUpdates:
+      - repoURL: {{.gitRepo}}
+        writeBranch: {{.gitBranch}}
+        kustomize:
+          images:
+            - image: {{.dockerRegistry}}/{{.service}}
+              path: k8s/overlays/staging/{{.service}}
+    argoCDAppUpdates:
+      - appName: {{.service}}-staging
+        appNamespace: argocd

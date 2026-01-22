@@ -1,0 +1,60 @@
+# Kargo Configuration - Single Source of Truth
+# This file defines all services, environments, and promotion policies
+# Run ./generate.sh to create Kargo resources from this config
+
+project: microsvcs
+namespace: microsvcs
+gitRepo: https://github.com/davidaparicio/microsvcs.git
+gitBranch: main
+dockerRegistry: docker.io/davidaparicio
+
+# Services to deploy
+services:
+  - red
+  - blue
+  - green
+  - yellow
+
+# Environment promotion pipeline
+environments:
+  - name: development
+    autoPromote: true
+    # Subscribe to dev warehouse (sha-* tags from every commit)
+    warehouseType: dev
+    imageTagPattern: "^sha-.*"
+    smokeTest:
+      enabled: false  # Skip for dev (too frequent)
+
+  - name: staging
+    autoPromote: true  # Auto-promote when new releases are created
+    # Subscribe to releases warehouse (semantic version tags)
+    warehouseType: releases
+    semverConstraint: ">=0.0.0"
+    smokeTest:
+      enabled: true
+      timeout: 5m
+
+  - name: production
+    autoPromote: false  # Manual promotion only
+    # Subscribe to upstream staging stage
+    warehouseType: upstream
+    smokeTest:
+      enabled: true
+      timeout: 10m
+
+# Warehouse configuration
+warehouse:
+  discoveryLimit: 10
+  # Platform architecture for image discovery
+  # Options: linux/amd64, linux/arm64, linux/arm/v7, etc.
+  # For Mac M1/M2 (Silicon) with Kind/Docker Desktop, use: linux/arm64
+  # For production with multi-arch builds, use: linux/amd64
+  platform: linux/arm64
+
+# Validation configuration
+validation:
+  healthChecks:
+    enabled: true
+    timeout: 5m
+  smokeTests:
+    scriptPath: scripts/smoke-test.sh

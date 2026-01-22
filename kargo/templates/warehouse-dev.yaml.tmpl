@@ -1,0 +1,15 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: {{.service}}-dev
+  namespace: {{.namespace}}
+spec:
+  subscriptions:
+    - image:
+        repoURL: {{.dockerRegistry}}/{{.service}}
+        imageSelectionStrategy: NewestBuild
+        platform: linux/amd64
+        discoveryLimit: {{.warehouse.discoveryLimit}}
+        tagSelection:
+          allowTags:
+            - {{.devEnvironment.imageTagPattern}}
