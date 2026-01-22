@@ -21,7 +21,7 @@ echo "Then open your browser to https://localhost:8080"
 # Note: Remember to change the admin password after first login for security purposes.
 
 # Install ArgoCD Image Updater (DOT / https://youtu.be/avPUQin9kzU)
-kubectl -n argocd apply -f https://raw.githubusercontent.com/argoproj-lab/argocd-image-updater/stable/manifests/install.yaml
+# kubectl -n argocd apply -f https://raw.githubusercontent.com/argoproj-lab/argocd-image-updater/stable/manifests/install.yaml
 # Alternatively, install ApplicationSet controller
 # https://raw.githubusercontent.com/argoproj-lab/applicationset/stable/manifests/install.yaml
 
@@ -57,4 +57,4 @@ kubectl get svc -A | grep development
 kubectl get ingress -A | grep development
 
 # Check ArgoCD image updater logs
-kubectl -n argocd logs -l app.kubernetes.io/name=argocd-image-updater -c argocd-image-updater
+# kubectl -n argocd logs -l app.kubernetes.io/name=argocd-image-updater -c argocd-image-updater

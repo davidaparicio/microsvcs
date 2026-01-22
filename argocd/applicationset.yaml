@@ -27,6 +27,8 @@ spec:
       labels:
         app.kubernetes.io/name: '{{.project}}'
         environment: '{{.env}}'
+      annotations:
+        kargo.akuity.io/authorized-stage: 'microsvcs:{{.project}}-{{.env}}'
       finalizers:
         - resources-finalizer.argocd.argoproj.io
     spec:

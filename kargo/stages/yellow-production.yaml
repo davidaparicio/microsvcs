@@ -4,17 +4,39 @@ metadata:
   name: yellow-production
   namespace: microsvcs
 spec:
-  subscriptions:
-    upstreamStages:
-      - name: yellow-staging
-  promotionMechanisms:
-    gitRepoUpdates:
-      - repoURL: https://github.com/davidaparicio/microsvcs.git
-        writeBranch: main
-        kustomize:
-          images:
-            - image: docker.io/davidaparicio/yellow
-              path: k8s/overlays/production/yellow
-    argoCDAppUpdates:
-      - appName: yellow-production
-        appNamespace: argocd
+  requestedFreight:
+    - origin:
+        kind: Warehouse
+        name: yellow
+      sources:
+        stages:
+          - yellow-staging
+  promotionTemplate:
+    spec:
+      steps:
+        - uses: git-clone
+          config:
+            repoURL: https://github.com/davidaparicio/microsvcs.git
+            checkout:
+              - branch: main
+                path: ./src
+        - uses: kustomize-set-image
+          as: update-image
+          config:
+            path: ./src/k8s/overlays/production/yellow
+            images:
+              - image: docker.io/davidaparicio/yellow
+                tag: ${{ imageFrom("docker.io/davidaparicio/yellow").Tag }}
+        - uses: git-commit
+          as: commit
+          config:
+            path: ./src
+            message: ${{ outputs['update-image'].commitMessage }}
+        - uses: git-push
+          config:
+            path: ./src
+        - uses: argocd-update
+          config:
+            apps:
+              - name: yellow-production
+                namespace: argocd

@@ -7,6 +7,8 @@ dist/
 # Project evolution
 ztmp
 report.json
+# Kargo secrets
+kargo/.env
 
 # Created by https://www.toptal.com/developers/gitignore/api/go,goland,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=go,goland,visualstudiocode
