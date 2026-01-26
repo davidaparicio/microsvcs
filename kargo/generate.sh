@@ -6,7 +6,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/config.yaml"
-TEMPLATES_DIR="${SCRIPT_DIR}/templates"
 OUTPUT_DIR="${SCRIPT_DIR}/generated"
 
 # Colors for output
