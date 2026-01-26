@@ -44,7 +44,7 @@ DISCOVERY_LIMIT=$(yq e '.warehouse.discoveryLimit' "$CONFIG_FILE")
 PLATFORM=$(yq e '.warehouse.platform' "$CONFIG_FILE")
 
 # Get services array
-SERVICES=($(yq e '.services[]' "$CONFIG_FILE"))
+mapfile -t SERVICES < <(yq e '.services[]' "$CONFIG_FILE")
 
 # Get environment configs
 DEV_AUTO_PROMOTE=$(yq e '.environments[] | select(.name == "development") | .autoPromote' "$CONFIG_FILE")
