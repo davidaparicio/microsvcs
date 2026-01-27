@@ -9,10 +9,8 @@ commonLabels:
   app.kubernetes.io/instance: green-production
   environment: production
 images:
-- name: davidaparicio/app
-  newName: davidaparicio/green
-  newTag: 2.3.0
-- name: docker.io/davidaparicio/green
+- name: docker.io/davidaparicio/app
+  newName: docker.io/davidaparicio/green
   newTag: 2.5.0
 replicas:
 - name: app
