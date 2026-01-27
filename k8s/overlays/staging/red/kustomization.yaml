@@ -1,46 +1,41 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: red-staging
-
 resources:
-  - ../../../base
-
+- ../../../base
 namePrefix: red-
-
 commonLabels:
   app.kubernetes.io/name: red
   app.kubernetes.io/instance: red-staging
   environment: staging
-
 images:
-  - name: davidaparicio/app
-    newName: davidaparicio/red
-    newTag: "2.3.1"
-
+- name: davidaparicio/app
+  newName: davidaparicio/red
+  newTag: 2.3.1
+- name: docker.io/davidaparicio/red
+  newTag: 2.5.0
 replicas:
-  - name: app
-    count: 2
-
+- name: app
+  count: 2
 patches:
-  - patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/memory
-        value: "64Mi"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/cpu
-        value: "100m"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/memory
-        value: "128Mi"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/cpu
-        value: "250m"
-    target:
-      kind: Deployment
-  - patch: |-
-      - op: replace
-        path: /spec/rules/0/host
-        value: red.stg.127.0.0.1.nip.io
-    target:
-      kind: Ingress
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: "64Mi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: "100m"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: "128Mi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: "250m"
+  target:
+    kind: Deployment
+- patch: |-
+    - op: replace
+      path: /spec/rules/0/host
+      value: red.stg.127.0.0.1.nip.io
+  target:
+    kind: Ingress
