@@ -1,46 +1,41 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: green-production
-
 resources:
-  - ../../../base
-
+- ../../../base
 namePrefix: green-
-
 commonLabels:
   app.kubernetes.io/name: green
   app.kubernetes.io/instance: green-production
   environment: production
-
 images:
-  - name: davidaparicio/app
-    newName: davidaparicio/green
-    newTag: "2.3.0"
-
+- name: davidaparicio/app
+  newName: davidaparicio/green
+  newTag: 2.3.0
+- name: docker.io/davidaparicio/green
+  newTag: 2.5.0
 replicas:
-  - name: app
-    count: 3
-
+- name: app
+  count: 3
 patches:
-  - patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/memory
-        value: "128Mi"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/cpu
-        value: "200m"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/memory
-        value: "256Mi"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/cpu
-        value: "500m"
-    target:
-      kind: Deployment
-  - patch: |-
-      - op: replace
-        path: /spec/rules/0/host
-        value: green.prd.127.0.0.1.nip.io
-    target:
-      kind: Ingress
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: "128Mi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: "200m"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: "256Mi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: "500m"
+  target:
+    kind: Deployment
+- patch: |-
+    - op: replace
+      path: /spec/rules/0/host
+      value: green.prd.127.0.0.1.nip.io
+  target:
+    kind: Ingress
