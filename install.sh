@@ -263,12 +263,16 @@ echo ""
 sleep 5  # Give ArgoCD a moment to start syncing
 
 # Wait for applications
+# for service in red blue green yellow; do app="${service}-development"; echo -n "   • ${app}: "; sync_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.sync.status}' 2>/dev/null); health_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.health.status}' 2>/dev/null); echo "${sync_status} / ${health_status}"; done
+# for service in red blue green yellow; do app="${service}-staging"; echo -n "   • ${app}: "; sync_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.sync.status}' 2>/dev/null); health_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.health.status}' 2>/dev/null); echo "${sync_status} / ${health_status}"; done
+# for service in red blue green yellow; do app="${service}-production"; echo -n "   • ${app}: "; sync_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.sync.status}' 2>/dev/null); health_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.health.status}' 2>/dev/null); echo "${sync_status} / ${health_status}"; done
+
 if [ "$SKIP_WAIT" = false ]; then
     echo -e "${YELLOW}⏳ Waiting for applications to be synced and healthy...${NC}"
     echo "   This may take several minutes..."
 
     for service in "${SERVICES[@]}"; do
-        for env in "${ENVIRONMENTS[@]}"; do
+        for env in development; do # "${ENVIRONMENTS[@]}";
             app="${service}-${env}"
             echo -n "   • ${app}: "
             timeout=600

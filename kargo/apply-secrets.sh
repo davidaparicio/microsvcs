@@ -3,6 +3,8 @@ set -euo pipefail
 
 # Script to apply Kargo secrets using environment variables from .env file
 # https://blog.stephane-robert.info/docs/outils/projets/envsubst/
+# https://blog.filador.ch/en/posts/kargo-deploy-from-one-environment-to-another-with-gitops/
+# https://docs.kargo.io/user-guide/security/managing-credentials/
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${SCRIPT_DIR}/.env"

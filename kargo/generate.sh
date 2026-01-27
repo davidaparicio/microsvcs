@@ -497,3 +497,5 @@ else
     echo -e "💡 Tip: Use '${YELLOW}./generate.sh --apply${NC}' to generate and apply in one step"
     echo -e "💡 Tip: Use '${YELLOW}./generate.sh --verify-only${NC}' to verify already-applied resources"
 fi
+
+# kubectl delete warehouses --all -n microsvcs 2>&1 && sleep 2 && kubectl apply -f /Users/daparicio/code/gitlab.com/davidaparicio/microsvcs/kargo/generated/warehouses/ 2>&1 && kubectl apply -f /Users/daparicio/code/gitlab.com/davidaparicio/microsvcs/kargo/generated/stages/ 2>&1
