@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.1](https://github.com/davidaparicio/microsvcs/compare/yellow/2.5.0...yellow/2.5.1) (2026-01-27)
+
+
+### Bug Fixes
+
+* **color:** adjust default percentage splits for colors to 90/10 ([efd6428](https://github.com/davidaparicio/microsvcs/commit/efd64280411ba1f7cfe3f6a9e7e7ae03b5026d2e))
+
 ## [2.5.0](https://github.com/davidaparicio/microsvcs/compare/yellow/2.4.0...yellow/2.5.0) (2026-01-21)
 
 
