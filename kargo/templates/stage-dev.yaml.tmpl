@@ -1,0 +1,25 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: {{ .service }}-development
+  namespace: {{ .namespace }}
+spec:
+  subscriptions:
+    warehouse: {{ .service }}-dev
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: {{ .gitRepo }}
+      writeBranch: {{ .gitBranch }}
+      kustomize:
+        images:
+        - image: {{ .dockerRegistry }}/{{ .service }}
+          path: {{ .kustomizePath }}/development/{{ .service }}
+  verification:
+{{- if .healthChecks.enabled }}
+    analysisTemplates:
+    - name: {{ .service }}-health-check
+{{- end }}
+{{- if .smokeTests.enabled }}
+    analysisRuns:
+    - name: {{ .service }}-smoke-test
+{{- end }}

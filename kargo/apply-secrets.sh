@@ -3,6 +3,8 @@ set -euo pipefail
 
 # Script to apply Kargo secrets using environment variables from .env file
 # https://blog.stephane-robert.info/docs/outils/projets/envsubst/
+# https://blog.filador.ch/en/posts/kargo-deploy-from-one-environment-to-another-with-gitops/
+# https://docs.kargo.io/user-guide/security/managing-credentials/
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${SCRIPT_DIR}/.env"
@@ -38,6 +40,13 @@ for var in "${required_vars[@]}"; do
 done
 
 echo "Applying Kargo secrets with credentials from .env..."
+
+# Ensure namespace exists with Kargo project label
+if ! kubectl get namespace microsvcs &> /dev/null; then
+    echo "- Creating namespace microsvcs..."
+    kubectl create namespace microsvcs
+fi
+kubectl label namespace microsvcs kargo.akuity.io/project=true --overwrite &> /dev/null
 
 # Apply git credentials
 echo "- Applying GitHub credentials..."
