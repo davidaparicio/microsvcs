@@ -249,7 +249,7 @@ spec:
   subscriptions:
   - image:
       repoURL: ${DOCKER_REGISTRY}/${SERVICE}
-      imageSelectionStrategy: Lexical
+      imageSelectionStrategy: NewestBuild
       allowTags: "${DEV_TAG_PATTERN}"
       discoveryLimit: ${DEV_DISCOVERY_LIMIT}
 EOF
