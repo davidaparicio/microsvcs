@@ -13,7 +13,7 @@ images:
   newName: davidaparicio/red
   newTag: latest
 - name: docker.io/davidaparicio/red
-  newTag: 2.5.0
+  newTag: sha-f0ad6755200fac2059e615a43d68d5d989a3df88
 replicas:
 - name: app
   count: 1
