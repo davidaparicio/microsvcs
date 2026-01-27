@@ -39,11 +39,12 @@ done
 
 echo "Applying Kargo secrets with credentials from .env..."
 
-# Ensure namespace exists
+# Ensure namespace exists with Kargo project label
 if ! kubectl get namespace microsvcs &> /dev/null; then
     echo "- Creating namespace microsvcs..."
     kubectl create namespace microsvcs
 fi
+kubectl label namespace microsvcs kargo.akuity.io/project=true --overwrite &> /dev/null
 
 # Apply git credentials
 echo "- Applying GitHub credentials..."

@@ -483,7 +483,7 @@ if [ "$VERIFY_ONLY" = true ] || [ "$AUTO_APPLY" = true ]; then
     echo ""
     echo "📊 Stage status:"
     if command -v kargo &> /dev/null; then
-        kargo get stages -n "${NAMESPACE}" || kubectl get stages -n "${NAMESPACE}"
+        kargo get stages --project="${PROJECT}" || kubectl get stages -n "${NAMESPACE}"
     else
         kubectl get stages -n "${NAMESPACE}"
     fi

@@ -228,50 +228,68 @@ else
 fi
 echo ""
 
-# Generate and apply Kargo configuration
-echo -e "${BLUE}📦 Generating and applying Kargo configuration...${NC}"
-if [ -f "kargo/generate.sh" ]; then
-    # Generate Kargo manifests
-    echo "  Generating Kargo manifests..."
-    if (cd kargo && bash generate.sh --no-backup > /dev/null 2>&1); then
-        echo -e "  ${GREEN}✅${NC} Kargo manifests generated"
+# Trigger initial sync
+SERVICES=(red blue green yellow)
+ENVIRONMENTS=(development staging production)
 
-        # Apply Kargo resources
-        echo "  Applying Kargo resources..."
-        kubectl apply -f kargo/generated/project.yaml 2>/dev/null || true
-        kubectl apply -f kargo/generated/warehouses/ 2>/dev/null || true
-        kubectl apply -f kargo/generated/stages/ 2>/dev/null || true
-        echo -e "  ${GREEN}✅${NC} Kargo configuration applied"
-    else
-        echo -e "  ${YELLOW}⚠️  Failed to generate Kargo manifests${NC}"
-        echo "     You can generate and apply them manually later with:"
-        echo -e "     ${YELLOW}cd kargo && ./generate.sh --apply${NC}"
-    fi
-else
-    echo -e "  ${YELLOW}⚠️  kargo/generate.sh not found${NC}"
-fi
+# Pre-create namespaces (ArgoCD CreateNamespace may race with manual sync trigger)
+echo -e "${BLUE}📂 Pre-creating namespaces...${NC}"
+for service in "${SERVICES[@]}"; do
+    for env in "${ENVIRONMENTS[@]}"; do
+        kubectl create namespace "${service}-${env}" &> /dev/null || true
+    done
+done
+echo -e "  ${GREEN}✅${NC} Namespaces ready"
 echo ""
+
+sleep 5  # Give ArgoCD a moment to register namespaces
+
+echo -e "${BLUE}🔄 Triggering initial ArgoCD sync...${NC}"
+for service in "${SERVICES[@]}"; do
+    for env in "${ENVIRONMENTS[@]}"; do
+        app="${service}-${env}"
+        echo -n "   • ${app}: "
+        if kubectl -n argocd patch "app/${app}" \
+            -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}' \
+            --type=merge &> /dev/null; then
+            echo -e "${GREEN}sync triggered${NC}"
+        else
+            echo -e "${YELLOW}skipped (may not exist yet)${NC}"
+        fi
+    done
+done
+echo ""
+
+sleep 5  # Give ArgoCD a moment to start syncing
 
 # Wait for applications
 if [ "$SKIP_WAIT" = false ]; then
     echo -e "${YELLOW}⏳ Waiting for applications to be synced and healthy...${NC}"
     echo "   This may take several minutes..."
 
-    SERVICES=(red blue green yellow)
-    ENVIRONMENTS=(development staging production)
-
     for service in "${SERVICES[@]}"; do
         for env in "${ENVIRONMENTS[@]}"; do
             app="${service}-${env}"
             echo -n "   • ${app}: "
-            if kubectl -n argocd wait --for=condition=Synced --timeout=600s "app/${app}" &> /dev/null; then
-                if kubectl -n argocd wait --for=condition=Healthy --timeout=600s "app/${app}" &> /dev/null; then
-                    echo -e "${GREEN}✅ synced & healthy${NC}"
-                else
-                    echo -e "${YELLOW}⚠️  synced but not healthy${NC}"
+            timeout=600
+            elapsed=0
+            sync_status=""
+            health_status=""
+            while [ "$elapsed" -lt "$timeout" ]; do
+                sync_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.sync.status}' 2>/dev/null)
+                health_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.health.status}' 2>/dev/null)
+                if [ "$sync_status" = "Synced" ] && [ "$health_status" = "Healthy" ]; then
+                    break
                 fi
+                sleep 5
+                elapsed=$((elapsed + 5))
+            done
+            if [ "$sync_status" = "Synced" ] && [ "$health_status" = "Healthy" ]; then
+                echo -e "${GREEN}✅ synced & healthy${NC}"
+            elif [ "$sync_status" = "Synced" ]; then
+                echo -e "${YELLOW}⚠️  synced but ${health_status:-not healthy}${NC}"
             else
-                echo -e "${RED}❌ failed to sync${NC}"
+                echo -e "${RED}❌ ${sync_status:-unknown} / ${health_status:-unknown}${NC}"
             fi
         done
     done
@@ -280,6 +298,21 @@ else
     echo -e "${YELLOW}⏭️  Skipping wait for applications${NC}"
     echo ""
 fi
+
+# Generate and apply Kargo configuration (after ArgoCD apps are synced)
+echo -e "${BLUE}📦 Generating and applying Kargo configuration...${NC}"
+if [ -f "kargo/generate.sh" ]; then
+    if (cd kargo && bash generate.sh --apply); then
+        echo -e "  ${GREEN}✅${NC} Kargo configuration generated and applied"
+    else
+        echo -e "  ${YELLOW}⚠️  Failed to generate/apply Kargo manifests${NC}"
+        echo "     You can retry manually with:"
+        echo -e "     ${YELLOW}cd kargo && ./generate.sh --apply${NC}"
+    fi
+else
+    echo -e "  ${YELLOW}⚠️  kargo/generate.sh not found${NC}"
+fi
+echo ""
 
 # Verification
 echo -e "${GREEN}✨ Installation complete!${NC}"

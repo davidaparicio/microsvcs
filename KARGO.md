@@ -10,6 +10,23 @@ GitOps-driven workflow powered by Kargo
 * [How to Automate CI/CD Pipelines with Kargo (Live Demo) (34min)](https://youtu.be/2O1eQntjR-U)
 * [Kargo - Multi-Stage Deployment Pipelines using GitOps - Jesse Suen / Kent Rancourt (16min)](https://youtu.be/0B_JODxyK0w)
 
+## Color demo
+
+Before going to the [Kargo presentation](https://kargo.io/), if you need to test the project: it's a kind of [stefanprodan/podinfo](https://github.com/stefanprodan/podinfo) but with a [feature flag ability](https://trunkbaseddevelopment.com/feature-flags/).
+
+```bash
+❯ cd color && PORT=8080 NAMESPACE=red make run
+Running...
+
+Server: 	Color - Community
+Version: 	v1.0.0
+Git commit: 	a0c993da39b2136e50054280268f0074017826b4
+Built: 		2026-01-27T15:30:15+0100
+
+Starting HTTP server (darwin/arm64) listening on port 8080.
+⇨ http server started on [::]:8080
+```
+
 ## Architecture
 
 ```
