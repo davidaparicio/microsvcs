@@ -39,6 +39,12 @@ done
 
 echo "Applying Kargo secrets with credentials from .env..."
 
+# Ensure namespace exists
+if ! kubectl get namespace microsvcs &> /dev/null; then
+    echo "- Creating namespace microsvcs..."
+    kubectl create namespace microsvcs
+fi
+
 # Apply git credentials
 echo "- Applying GitHub credentials..."
 envsubst < "${SCRIPT_DIR}/git-credentials.yaml" | kubectl apply -f -

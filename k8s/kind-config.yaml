@@ -2,11 +2,20 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: microsvcs
 nodes:
-  - role: control-plane
-    extraPortMappings:
-      - containerPort: 30080
-        hostPort: 30080
-        protocol: TCP
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 31443 # Argo CD dashboard
+    hostPort: 31443 # 8080
+  - containerPort: 31444 # Kargo dashboard
+    hostPort: 31444
+  - containerPort: 31445 # External webhooks server
+    hostPort: 31445
+  - containerPort: 32080 # test application instance
+    hostPort: 32080
+  - containerPort: 32081 # UAT application instance
+    hostPort: 32081
+  - containerPort: 32082 # prod application instance
+    hostPort: 32082
     # Uncomment to use a specific Kubernetes version for testing
     # image: kindest/node:v1.23.17
 

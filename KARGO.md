@@ -2,6 +2,14 @@
 
 Kargo manages promotions across environments for the microservices (red, blue, green, yellow).
 
+## Quick tutorial video
+
+GitOps-driven workflow powered by Kargo
+* [Kargo Tutorial: Manage Multi-Environment Deployments with Argo CD (9min)](https://youtu.be/NHXBV40GFHs)
+* [Multi Environment Promotions Made Simple | Akuity Webinar (56min)](https://youtu.be/bFXxvvM-jcQ)
+* [How to Automate CI/CD Pipelines with Kargo (Live Demo) (34min)](https://youtu.be/2O1eQntjR-U)
+* [Kargo - Multi-Stage Deployment Pipelines using GitOps - Jesse Suen / Kent Rancourt (16min)](https://youtu.be/0B_JODxyK0w)
+
 ## Architecture
 
 ```

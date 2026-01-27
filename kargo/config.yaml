@@ -1,0 +1,69 @@
+# Kargo Configuration - Single Source of Truth
+# This file defines all services, environments, and promotion policies
+# Templates in kargo/templates/ use this config to generate Kargo resources
+
+project: microsvcs
+namespace: microsvcs
+gitRepo: https://github.com/davidaparicio/microsvcs.git
+gitBranch: main
+dockerRegistry: docker.io/davidaparicio
+
+# Microservices to manage
+services:
+  - red
+  - blue
+  - green
+  - yellow
+
+# Environment definitions with promotion policies
+environments:
+  - name: development
+    autoPromote: true
+    # Development uses sha-* tags to get latest commits
+    warehouse:
+      type: dev
+      imageTagPattern: "^sha-.*"
+      discoveryLimit: 10
+    validation:
+      healthChecks:
+        enabled: true
+        timeout: 5m
+      smokeTests:
+        enabled: false  # Skip smoke tests in dev for faster feedback
+
+  - name: staging
+    autoPromote: true  # Auto-promote on new releases
+    # Staging uses semantic version tags from release-please
+    warehouse:
+      type: releases
+      semverConstraint: ">=0.0.0"
+      discoveryLimit: 10
+    validation:
+      healthChecks:
+        enabled: true
+        timeout: 5m
+      smokeTests:
+        enabled: true
+        scriptPath: scripts/smoke-test.sh
+        timeout: 10m
+
+  - name: production
+    autoPromote: false  # Manual promotion only
+    # Production subscribes to staging (no direct warehouse)
+    validation:
+      healthChecks:
+        enabled: true
+        timeout: 5m
+      smokeTests:
+        enabled: true
+        scriptPath: scripts/smoke-test.sh
+        timeout: 10m
+
+# Warehouse configuration
+warehouse:
+  discoveryLimit: 10
+  pullPolicy: IfNotPresent  # Default image pull policy
+
+# Kustomize paths for each environment
+kustomize:
+  basePath: k8s/overlays
