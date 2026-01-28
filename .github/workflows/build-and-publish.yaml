@@ -119,11 +119,14 @@ jobs:
           IS_RELEASE="${{ steps.metadata.outputs.is_release }}"
           VERSION="${{ steps.metadata.outputs.version }}"
 
-          TAGS="$REGISTRY/$USERNAME/$PROJECT:sha-$SHA"
-          TAGS="$TAGS"$'\n'"$REGISTRY/$USERNAME/$PROJECT:latest"
+          # Extract namespace from username (remove +robotname if present)
+          NAMESPACE="${USERNAME%%+*}"
+
+          TAGS="$REGISTRY/$NAMESPACE/$PROJECT:sha-$SHA"
+          TAGS="$TAGS"$'\n'"$REGISTRY/$NAMESPACE/$PROJECT:latest"
 
           if [ "$IS_RELEASE" == "true" ]; then
-            TAGS="$TAGS"$'\n'"$REGISTRY/$USERNAME/$PROJECT:$VERSION"
+            TAGS="$TAGS"$'\n'"$REGISTRY/$NAMESPACE/$PROJECT:$VERSION"
           fi
 
           echo "tags<<EOF" >> $GITHUB_OUTPUT
@@ -153,6 +156,9 @@ jobs:
           USERNAME="${{ vars.QUAY_USERNAME }}"
           SHA="${{ steps.sha.outputs.short }}"
 
+          # Extract namespace from username (remove +robotname if present)
+          NAMESPACE="${USERNAME%%+*}"
+
           echo "### 🐳 Built and Pushed Image" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Service:** $PROJECT" >> $GITHUB_STEP_SUMMARY
@@ -164,16 +170,16 @@ jobs:
             echo "**Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
-            echo "- \`$USERNAME/$PROJECT:$VERSION\`" >> $GITHUB_STEP_SUMMARY
-            echo "- \`$USERNAME/$PROJECT:latest\`" >> $GITHUB_STEP_SUMMARY
-            echo "- \`$USERNAME/$PROJECT:sha-$SHA\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`$NAMESPACE/$PROJECT:$VERSION\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`$NAMESPACE/$PROJECT:latest\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`$NAMESPACE/$PROJECT:sha-$SHA\`" >> $GITHUB_STEP_SUMMARY
           else
             echo "**Build Type:** Development" >> $GITHUB_STEP_SUMMARY
             echo "**Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
-            echo "- \`$USERNAME/$PROJECT:sha-$SHA\`" >> $GITHUB_STEP_SUMMARY
-            echo "- \`$USERNAME/$PROJECT:latest\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`$NAMESPACE/$PROJECT:sha-$SHA\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`$NAMESPACE/$PROJECT:latest\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Kargo will detect this image and promote to DEV automatically." >> $GITHUB_STEP_SUMMARY
           fi
