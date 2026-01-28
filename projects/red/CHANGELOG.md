@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/davidaparicio/microsvcs/compare/red/2.6.0...red/2.6.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* **red:** to the "standard" color code ([34a55e0](https://github.com/davidaparicio/microsvcs/commit/34a55e0baf3b9832a4cb762f0cff7eb2faaeccd2))
+
 ## [2.6.0](https://github.com/davidaparicio/microsvcs/compare/red/2.5.2...red/2.6.0) (2026-01-28)
 
 
