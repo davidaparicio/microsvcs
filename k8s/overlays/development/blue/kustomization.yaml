@@ -10,7 +10,7 @@ commonLabels:
   environment: development
 images:
 - name: quay.io/davidaparicio/blue
-  newTag: sha-f1ceac9
+  newTag: sha-a2468e2
 replicas:
 - name: app
   count: 1
