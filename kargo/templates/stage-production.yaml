@@ -27,7 +27,7 @@ spec:
         config:
           path: ./repo/${KUSTOMIZE_BASE}/production/${SVC}
           images:
-          - image: ${REGISTRY}/app
+          - image: ${REGISTRY}/${SVC}
             tag: ${{ imageFrom(vars.image).Tag }}
       - uses: git-commit
         config:
