@@ -9,9 +9,6 @@ commonLabels:
   app.kubernetes.io/instance: green-development
   environment: development
 images:
-- name: quay.io/davidaparicio/app
-  newName: quay.io/davidaparicio/green
-  newTag: sha-f0ad6755200fac2059e615a43d68d5d989a3df88
 - name: quay.io/davidaparicio/green
   newTag: sha-f1ceac9
 replicas:
