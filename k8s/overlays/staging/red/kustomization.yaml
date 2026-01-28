@@ -11,8 +11,6 @@ commonLabels:
 images:
 - name: quay.io/davidaparicio/app
   newName: quay.io/davidaparicio/red
-  newTag: 2.6.1
-- name: quay.io/davidaparicio/red
   newTag: 3.0.0
 replicas:
 - name: app
