@@ -10,7 +10,7 @@ commonLabels:
   environment: staging
 images:
 - name: quay.io/davidaparicio/red
-  newTag: 2.6.1
+  newTag: 3.0.0
 replicas:
 - name: app
   count: 2
