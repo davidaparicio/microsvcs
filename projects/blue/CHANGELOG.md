@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.0.0](https://github.com/davidaparicio/microsvcs/compare/blue/2.6.1...blue/3.0.0) (2026-01-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* 3 major colors ([#50](https://github.com/davidaparicio/microsvcs/issues/50))
+
+### Features
+
+* **!:** color version bump ([#49](https://github.com/davidaparicio/microsvcs/issues/49)) ([38e3000](https://github.com/davidaparicio/microsvcs/commit/38e3000661420e76ca711d38598de109cd9f0d17))
+* 3 major colors ([#50](https://github.com/davidaparicio/microsvcs/issues/50)) ([5df9926](https://github.com/davidaparicio/microsvcs/commit/5df99269e4e2b87aaa61ceb6e885699878bb55e5))
+
 ## [2.6.1](https://github.com/davidaparicio/microsvcs/compare/blue/2.6.0...blue/2.6.1) (2026-01-28)
 
 

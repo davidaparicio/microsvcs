@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/davidaparicio/microsvcs/compare/red/3.0.0...red/3.0.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* **red:** add the buggy version ([#47](https://github.com/davidaparicio/microsvcs/issues/47)) ([73706d9](https://github.com/davidaparicio/microsvcs/commit/73706d9d1ef2c2de6a1f500c70428006336c8c15))
+
 ## [3.0.0](https://github.com/davidaparicio/microsvcs/compare/red/2.6.1...red/3.0.0) (2026-01-28)
 
 
