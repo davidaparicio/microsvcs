@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.2](https://github.com/davidaparicio/microsvcs/compare/blue/2.5.1...blue/2.5.2) (2026-01-27)
+
+
+### Bug Fixes
+
+* **colors:** adjust color 80|20 rule ([#33](https://github.com/davidaparicio/microsvcs/issues/33)) ([3b91c52](https://github.com/davidaparicio/microsvcs/commit/3b91c528280b6e5c87cf8f16799c40d843a46c9c))
+
 ## [2.5.1](https://github.com/davidaparicio/microsvcs/compare/blue/2.5.0...blue/2.5.1) (2026-01-27)
 
 
