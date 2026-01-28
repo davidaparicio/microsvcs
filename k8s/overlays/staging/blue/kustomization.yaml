@@ -9,8 +9,9 @@ commonLabels:
   app.kubernetes.io/instance: blue-staging
   environment: staging
 images:
-- name: quay.io/davidaparicio/blue
-  newTag: 2.6.1
+- name: quay.io/davidaparicio/app
+  newName: quay.io/davidaparicio/blue
+  newTag: 2.6.0
 replicas:
 - name: app
   count: 2

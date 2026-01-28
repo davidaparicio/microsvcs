@@ -2,15 +2,16 @@
 
 # set -euxo pipefail
 
-# 1. Patched the ingress-nginx service to use NodePort 30080 (which your kind cluster maps to the host)
-# 2. Updated curl_envs.sh to use port 30080 by default (configurable via INGRESS_PORT env var)
+# The kind cluster is configured to map NodePort 30080 to the host (see k8s/kind-config.yaml)
+# The ingress-nginx controller should use NodePort 30080 for HTTP traffic
 
-# If you need to change the NodePort for ingress-nginx controller, uncomment and modify the line below
+# If you need to patch the ingress-nginx controller to use NodePort 30080, run:
 # kubectl patch svc ingress-nginx-controller -n ingress-nginx --type='json' -p='[{"op": "replace", "path": "/spec/ports/0/nodePort", "value": 30080}]'
 
 #INGRESS_PORT=80
 PORT="${INGRESS_PORT:-30080}"
 #PORT="${INGRESS_PORT:-$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}' 2>/dev/null || echo 80)}"
+# docker ps --filter "name=microsvcs" --format "{{.Names}}: {{.Ports}}"
 
 # Development
 curl "http://red.dev.127.0.0.1.nip.io:${PORT}/version"

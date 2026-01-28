@@ -24,8 +24,8 @@ fi
 ARGO_CD_CHART_VERSION=8.1.4
 ARGO_ROLLOUTS_CHART_VERSION=2.40.1
 CERT_MANAGER_CHART_VERSION=v1.18.2
-KARGO_VERSION="latest"  # or specify version like v0.8.0
-INGRESS_NGINX_VERSION=v1.14.1
+KARGO_VERSION="1.8.9"  # latest or specify version like v0.8.0
+INGRESS_NGINX_VERSION=v1.14.2
 
 # Configuration
 CLUSTER_NAME="microsvcs"
@@ -148,8 +148,19 @@ echo -e "  ${GREEN}✅${NC} cert-manager installed"
 echo ""
 
 # Install Ingress NGINX
-echo -e "${BLUE}🌐 Installing Ingress NGINX ${INGRESS_NGINX_VERSION}...${NC}"
-kubectl apply -f "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${INGRESS_NGINX_VERSION}/deploy/static/provider/cloud/deploy.yaml"
+# kubectl apply -f "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${INGRESS_NGINX_VERSION}/deploy/static/provider/cloud/deploy.yaml"
+# Convert controller version (v1.x.x) to chart version (4.x.x)
+INGRESS_NGINX_CHART_VERSION="${INGRESS_NGINX_VERSION/v1./4.}"
+echo -e "${BLUE}🌐 Installing Ingress NGINX ${INGRESS_NGINX_VERSION} (chart ${INGRESS_NGINX_CHART_VERSION})...${NC}"
+helm upgrade --install ingress-nginx ingress-nginx \
+  --repo https://kubernetes.github.io/ingress-nginx \
+  --version "${INGRESS_NGINX_CHART_VERSION}" \
+  --namespace ingress-nginx \
+  --create-namespace \
+  --set controller.service.type=NodePort \
+  --set controller.service.nodePorts.http=30080 \
+  --set controller.service.nodePorts.https=30443 \
+  --wait
 echo -e "  ${GREEN}✅${NC} Ingress NGINX installed"
 echo ""
 
@@ -164,7 +175,8 @@ helm upgrade --install argocd argo-cd \
   --set dex.enabled=false \
   --set notifications.enabled=false \
   --set server.service.type=NodePort \
-  --set server.service.nodePortHttp=31443 \
+  --set server.service.nodePortHttp=32443 \
+  --set server.service.nodePortHttps=31443 \
   --set server.extensions.enabled=true \
   --set 'server.extensions.contents[0].name=argo-rollouts' \
   --set 'server.extensions.contents[0].url=https://github.com/argoproj-labs/rollout-extension/releases/download/v0.3.3/extension.tar' \
