@@ -10,7 +10,7 @@ commonLabels:
   environment: development
 images:
 - name: quay.io/davidaparicio/red
-  newTag: sha-e2dfaba
+  newTag: sha-a2468e2
 replicas:
 - name: app
   count: 1
