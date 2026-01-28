@@ -1,303 +1,94 @@
 #!/bin/bash
 set -euo pipefail
 
-# Kargo Configuration Generator
-# Generates Kargo resources from config.yaml
-# Usage: ./generate.sh [--validate] [--diff] [--apply] [--dry-run]
+# Kargo manifest generator — reads config.yaml, writes generated/
+# Usage: ./generate.sh [--apply]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_FILE="${SCRIPT_DIR}/config.yaml"
-GENERATED_DIR="${SCRIPT_DIR}/generated"
-
-# Colors (if terminal supports it)
-if [[ -t 1 ]]; then
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    BLUE='\033[0;34m'
-    NC='\033[0m' # No Color
-else
-    RED=''
-    GREEN=''
-    YELLOW=''
-    BLUE=''
-    NC=''
-fi
-
-# Parse command line arguments
-VALIDATE_ONLY=false
-SHOW_DIFF=false
-AUTO_APPLY=false
-DRY_RUN=false
-NO_BACKUP=false
-VERIFY_ONLY=false
-
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --validate)
-            VALIDATE_ONLY=true
-            shift
-            ;;
-        --diff)
-            SHOW_DIFF=true
-            shift
-            ;;
-        --apply)
-            AUTO_APPLY=true
-            shift
-            ;;
-        --dry-run)
-            DRY_RUN=true
-            shift
-            ;;
-        --no-backup)
-            NO_BACKUP=true
-            shift
-            ;;
-        --verify-only)
-            VERIFY_ONLY=true
-            shift
-            ;;
-        -h|--help)
-            echo "Usage: $0 [OPTIONS]"
-            echo ""
-            echo "Options:"
-            echo "  --validate     Validate config.yaml syntax only"
-            echo "  --diff         Show diff between current and new generated files"
-            echo "  --apply        Generate and automatically apply to cluster"
-            echo "  --dry-run      Validate manifests with kubectl dry-run"
-            echo "  --no-backup    Skip backup of existing generated/ directory (useful for CI)"
-            echo "  --verify-only  Skip generation, only run verification on existing manifests"
-            echo "  -h, --help     Show this help message"
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $1"
-            echo "Use --help for usage information"
-            exit 1
-            ;;
-    esac
-done
+CONFIG="${SCRIPT_DIR}/config.yaml"
+OUT="${SCRIPT_DIR}/generated"
 
 # Check dependencies
-check_dependency() {
-    if ! command -v "$1" &> /dev/null; then
-        echo -e "${RED}❌ Error: $1 is not installed.${NC}"
-        echo "   Please install it: $2"
-        exit 1
-    fi
-}
+command -v yq &>/dev/null || { echo "Error: yq is required. https://github.com/mikefarah/yq#install"; exit 1; }
 
-check_dependency "yq" "brew install yq (macOS) or https://github.com/mikefarah/yq#install"
+# Read config
+PROJECT=$(yq '.project' "$CONFIG")
+NAMESPACE=$(yq '.namespace' "$CONFIG")
+GIT_REPO=$(yq '.gitRepo' "$CONFIG")
+GIT_BRANCH=$(yq '.gitBranch' "$CONFIG")
+REGISTRY=$(yq '.dockerRegistry' "$CONFIG")
+KUSTOMIZE_BASE=$(yq '.kustomizeBasePath' "$CONFIG")
 
-if [ "$AUTO_APPLY" = true ] || [ "$DRY_RUN" = true ]; then
-    check_dependency "kubectl" "https://kubernetes.io/docs/tasks/tools/"
-fi
+mapfile -t SERVICES < <(yq '.services[]' "$CONFIG")
 
-echo "🔧 Kargo Configuration Generator"
-echo "================================"
-echo ""
+echo "Generating Kargo manifests for: ${SERVICES[*]}"
 
-# Validate config.yaml syntax
-echo "🔍 Validating config.yaml..."
-if ! yq eval '.' "${CONFIG_FILE}" > /dev/null 2>&1; then
-    echo -e "  ${RED}❌ Error: Invalid YAML syntax in ${CONFIG_FILE}${NC}"
-    exit 1
-fi
-echo -e "  ${GREEN}✅${NC} Valid YAML syntax"
+rm -rf "$OUT"
+mkdir -p "$OUT"/{warehouses,stages}
 
-# Check required fields
-required_fields=(
-    ".project"
-    ".namespace"
-    ".gitRepo"
-    ".gitBranch"
-    ".dockerRegistry"
-    ".services"
-    ".environments"
-    ".kustomize.basePath"
-)
-
-for field in "${required_fields[@]}"; do
-    if [ "$(yq eval "${field}" "${CONFIG_FILE}")" = "null" ]; then
-        echo -e "  ${RED}❌ Error: Required field '${field}' is missing in ${CONFIG_FILE}${NC}"
-        exit 1
-    fi
-done
-echo -e "  ${GREEN}✅${NC} All required fields present"
-
-if [ "$VALIDATE_ONLY" = true ]; then
-    echo ""
-    echo -e "${GREEN}✅ Validation complete!${NC}"
-    exit 0
-fi
-
-# Skip generation if verify-only mode
-if [ "$VERIFY_ONLY" = true ]; then
-    echo ""
-    echo -e "${BLUE}🔍 Verify-only mode: Skipping generation${NC}"
-    echo ""
-
-    # Check if generated directory exists
-    if [ ! -d "${GENERATED_DIR}" ]; then
-        echo -e "${RED}❌ Error: Generated directory not found at ${GENERATED_DIR}${NC}"
-        echo "   Run without --verify-only first to generate manifests"
-        exit 1
-    fi
-
-    # Read configuration for verification
-    PROJECT=$(yq eval '.project' "${CONFIG_FILE}")
-    NAMESPACE=$(yq eval '.namespace' "${CONFIG_FILE}")
-
-    # Jump to verification section
-    # We'll add a label here and goto it
-fi
-
-echo ""
-
-# Skip backup and generation if verify-only
-if [ "$VERIFY_ONLY" = false ]; then
-    # Backup existing generated directory if it exists
-    if [ -d "${GENERATED_DIR}" ] && [ "$NO_BACKUP" = false ]; then
-        BACKUP_DIR="${GENERATED_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
-        echo "💾 Backing up existing generated/ to ${BACKUP_DIR##*/}"
-        cp -r "${GENERATED_DIR}" "${BACKUP_DIR}"
-    fi
-
-    # Clean and recreate generated directory
-    rm -rf "${GENERATED_DIR}"
-    mkdir -p "${GENERATED_DIR}"/{warehouses,stages}
-fi
-
-# Only read full config if not in verify-only mode
-if [ "$VERIFY_ONLY" = false ]; then
-    # Read configuration
-    PROJECT=$(yq eval '.project' "${CONFIG_FILE}")
-    NAMESPACE=$(yq eval '.namespace' "${CONFIG_FILE}")
-    GIT_REPO=$(yq eval '.gitRepo' "${CONFIG_FILE}")
-    GIT_BRANCH=$(yq eval '.gitBranch' "${CONFIG_FILE}")
-    DOCKER_REGISTRY=$(yq eval '.dockerRegistry' "${CONFIG_FILE}")
-    KUSTOMIZE_BASE=$(yq eval '.kustomize.basePath' "${CONFIG_FILE}")
-
-    # Read services and environments into arrays
-    # Using while read loop for maximum compatibility (bash 3+)
-    SERVICES=()
-    while IFS= read -r service; do
-        SERVICES+=("$service")
-    done < <(yq eval '.services[]' "${CONFIG_FILE}")
-
-    ENVIRONMENTS=()
-    while IFS= read -r env; do
-        ENVIRONMENTS+=("$env")
-    done < <(yq eval '.environments[].name' "${CONFIG_FILE}")
-
-    # Validate we have services
-    if [ ${#SERVICES[@]} -eq 0 ]; then
-        echo -e "${RED}❌ Error: No services defined in ${CONFIG_FILE}${NC}"
-        exit 1
-    fi
-
-    # Validate we have environments
-    if [ ${#ENVIRONMENTS[@]} -eq 0 ]; then
-        echo -e "${RED}❌ Error: No environments defined in ${CONFIG_FILE}${NC}"
-        exit 1
-    fi
-
-    echo "📋 Configuration:"
-    echo "  Project: ${PROJECT}"
-    echo "  Namespace: ${NAMESPACE}"
-    echo "  Git: ${GIT_REPO}@${GIT_BRANCH}"
-    echo "  Registry: ${DOCKER_REGISTRY}"
-    echo "  Services: ${SERVICES[*]}"
-    echo "  Environments: ${ENVIRONMENTS[*]}"
-    echo ""
-
-    # Counters for summary
-    TOTAL_FILES=0
-    START_TIME=$(date +%s)
-
-    # Generate Project with promotion policies
-    echo "📝 Generating project.yaml..."
-cat > "${GENERATED_DIR}/project.yaml" <<EOF
+# --- Project ---
+cat > "$OUT/project.yaml" <<EOF
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Project
 metadata:
   name: ${PROJECT}
 EOF
 
-# Note: Promotion policies are now defined in newer Kargo versions, but the basic Project
-# resource doesn't require spec in v1alpha1. Auto-promotion is configured per-stage.
+# --- Per-service resources ---
+for SVC in "${SERVICES[@]}"; do
 
-echo -e "  ${GREEN}✅${NC} Created project.yaml"
-TOTAL_FILES=$((TOTAL_FILES + 1))
+  # Warehouse: dev (sha-* tags)
+  DEV_PATTERN=$(yq '.environments[] | select(.name == "development") | .warehouse.imageTagPattern' "$CONFIG")
+  DEV_STRATEGY=$(yq '.environments[] | select(.name == "development") | .warehouse.imageSelectionStrategy' "$CONFIG")
+  DEV_LIMIT=$(yq '.environments[] | select(.name == "development") | .warehouse.discoveryLimit' "$CONFIG")
 
-# Generate Warehouses (2 per service: dev + releases)
-echo ""
-echo "📦 Generating warehouses..."
-for SERVICE in "${SERVICES[@]}"; do
-    # Dev warehouse (sha-* tags)
-    DEV_TAG_PATTERN=$(yq eval '.environments[] | select(.name == "development") | .warehouse.imageTagPattern' "${CONFIG_FILE}")
-    DEV_DISCOVERY_LIMIT=$(yq eval '.environments[] | select(.name == "development") | .warehouse.discoveryLimit' "${CONFIG_FILE}")
-
-    cat > "${GENERATED_DIR}/warehouses/${SERVICE}-dev.yaml" <<EOF
+  cat > "$OUT/warehouses/${SVC}-dev.yaml" <<EOF
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
-  name: ${SERVICE}-dev
+  name: ${SVC}-dev
   namespace: ${NAMESPACE}
 spec:
   subscriptions:
   - image:
-      repoURL: ${DOCKER_REGISTRY}/${SERVICE}
-      imageSelectionStrategy: NewestBuild
-      allowTags: "${DEV_TAG_PATTERN}"
-      discoveryLimit: ${DEV_DISCOVERY_LIMIT}
+      repoURL: ${REGISTRY}/${SVC}
+      imageSelectionStrategy: ${DEV_STRATEGY}
+      allowTags: "${DEV_PATTERN}"
+      discoveryLimit: ${DEV_LIMIT}
 EOF
-    echo -e "  ${GREEN}✅${NC} Created warehouses/${SERVICE}-dev.yaml"
-    TOTAL_FILES=$((TOTAL_FILES + 1))
 
-    # Releases warehouse (semver tags)
-    RELEASES_SEMVER=$(yq eval '.environments[] | select(.name == "staging") | .warehouse.semverConstraint' "${CONFIG_FILE}")
-    RELEASES_DISCOVERY_LIMIT=$(yq eval '.environments[] | select(.name == "staging") | .warehouse.discoveryLimit' "${CONFIG_FILE}")
+  # Warehouse: releases (semver tags)
+  REL_SEMVER=$(yq '.environments[] | select(.name == "staging") | .warehouse.semverConstraint' "$CONFIG")
+  REL_STRATEGY=$(yq '.environments[] | select(.name == "staging") | .warehouse.imageSelectionStrategy' "$CONFIG")
+  REL_LIMIT=$(yq '.environments[] | select(.name == "staging") | .warehouse.discoveryLimit' "$CONFIG")
 
-    cat > "${GENERATED_DIR}/warehouses/${SERVICE}-releases.yaml" <<EOF
+  cat > "$OUT/warehouses/${SVC}-releases.yaml" <<EOF
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
-  name: ${SERVICE}-releases
+  name: ${SVC}-releases
   namespace: ${NAMESPACE}
 spec:
   subscriptions:
   - image:
-      repoURL: ${DOCKER_REGISTRY}/${SERVICE}
-      imageSelectionStrategy: SemVer
-      semverConstraint: "${RELEASES_SEMVER}"
-      discoveryLimit: ${RELEASES_DISCOVERY_LIMIT}
+      repoURL: ${REGISTRY}/${SVC}
+      imageSelectionStrategy: ${REL_STRATEGY}
+      semverConstraint: "${REL_SEMVER}"
+      discoveryLimit: ${REL_LIMIT}
 EOF
-    echo -e "  ${GREEN}✅${NC} Created warehouses/${SERVICE}-releases.yaml"
-    TOTAL_FILES=$((TOTAL_FILES + 1))
-done
 
-# Generate Stages (3 per service: dev, staging, production)
-# Option 1: Single worktree approach for Trunk-Based Development
-# Edits kustomization.yaml in-place on main branch (no separate src/out worktrees)
-echo ""
-echo "🎯 Generating stages (Trunk-Based Development mode)..."
-for SERVICE in "${SERVICES[@]}"; do
-    # Development stage
-    cat > "${GENERATED_DIR}/stages/${SERVICE}-development.yaml" <<EOF
+  # Helper: generate a stage with git-clone → kustomize-set-image → git-commit → git-push
+  gen_stage() {
+    local name=$1 env=$2 freight_yaml=$3
+    cat > "$OUT/stages/${name}.yaml" <<EOF
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
-  name: ${SERVICE}-development
+  name: ${name}
   namespace: ${NAMESPACE}
 spec:
   requestedFreight:
-  - origin:
-      kind: Warehouse
-      name: ${SERVICE}-dev
-    sources:
-      direct: true
+${freight_yaml}
   promotionTemplate:
     spec:
       steps:
@@ -309,193 +100,53 @@ spec:
             path: ./repo
       - uses: kustomize-set-image
         config:
-          path: ./repo/${KUSTOMIZE_BASE}/development/${SERVICE}
+          path: ./repo/${KUSTOMIZE_BASE}/${env}/${SVC}
           images:
-          - image: ${DOCKER_REGISTRY}/${SERVICE}
-            tag: \${{ imageFrom("${DOCKER_REGISTRY}/${SERVICE}").Tag }}
+          - image: ${REGISTRY}/${SVC}
+            tag: \${{ imageFrom("${REGISTRY}/${SVC}").Tag }}
       - uses: git-commit
         config:
           path: ./repo
-          message: '[dev] ${SERVICE} use \${{ imageFrom("${DOCKER_REGISTRY}/${SERVICE}").Tag }}'
+          message: '[${env:0:3}] ${SVC} use \${{ imageFrom("${REGISTRY}/${SVC}").Tag }}'
       - uses: git-push
         config:
           path: ./repo
 EOF
+  }
 
-    echo -e "  ${GREEN}✅${NC} Created stages/${SERVICE}-development.yaml"
-    TOTAL_FILES=$((TOTAL_FILES + 1))
-
-    # Staging stage
-    cat > "${GENERATED_DIR}/stages/${SERVICE}-staging.yaml" <<EOF
-apiVersion: kargo.akuity.io/v1alpha1
-kind: Stage
-metadata:
-  name: ${SERVICE}-staging
-  namespace: ${NAMESPACE}
-spec:
-  requestedFreight:
-  - origin:
+  # Stage: development (direct from dev warehouse, auto-promote)
+  gen_stage "${SVC}-development" "development" "  - origin:
       kind: Warehouse
-      name: ${SERVICE}-releases
+      name: ${SVC}-dev
     sources:
-      direct: true
-  promotionTemplate:
-    spec:
-      steps:
-      - uses: git-clone
-        config:
-          repoURL: ${GIT_REPO}
-          checkout:
-          - branch: ${GIT_BRANCH}
-            path: ./repo
-      - uses: kustomize-set-image
-        config:
-          path: ./repo/${KUSTOMIZE_BASE}/staging/${SERVICE}
-          images:
-          - image: ${DOCKER_REGISTRY}/${SERVICE}
-            tag: \${{ imageFrom("${DOCKER_REGISTRY}/${SERVICE}").Tag }}
-      - uses: git-commit
-        config:
-          path: ./repo
-          message: '[stg] ${SERVICE} use \${{ imageFrom("${DOCKER_REGISTRY}/${SERVICE}").Tag }}'
-      - uses: git-push
-        config:
-          path: ./repo
-EOF
+      direct: true"
 
-    echo -e "  ${GREEN}✅${NC} Created stages/${SERVICE}-staging.yaml"
-    TOTAL_FILES=$((TOTAL_FILES + 1))
-
-    # Production stage
-    cat > "${GENERATED_DIR}/stages/${SERVICE}-production.yaml" <<EOF
-apiVersion: kargo.akuity.io/v1alpha1
-kind: Stage
-metadata:
-  name: ${SERVICE}-production
-  namespace: ${NAMESPACE}
-spec:
-  requestedFreight:
-  - origin:
+  # Stage: staging (direct from releases warehouse, auto-promote)
+  gen_stage "${SVC}-staging" "staging" "  - origin:
       kind: Warehouse
-      name: ${SERVICE}-releases
+      name: ${SVC}-releases
+    sources:
+      direct: true"
+
+  # Stage: production (from staging, manual promote)
+  gen_stage "${SVC}-production" "production" "  - origin:
+      kind: Warehouse
+      name: ${SVC}-releases
     sources:
       stages:
-      - ${SERVICE}-staging
-  promotionTemplate:
-    spec:
-      steps:
-      - uses: git-clone
-        config:
-          repoURL: ${GIT_REPO}
-          checkout:
-          - branch: ${GIT_BRANCH}
-            path: ./repo
-      - uses: kustomize-set-image
-        config:
-          path: ./repo/${KUSTOMIZE_BASE}/production/${SERVICE}
-          images:
-          - image: ${DOCKER_REGISTRY}/${SERVICE}
-            tag: \${{ imageFrom("${DOCKER_REGISTRY}/${SERVICE}").Tag }}
-      - uses: git-commit
-        config:
-          path: ./repo
-          message: '[prd] ${SERVICE} use \${{ imageFrom("${DOCKER_REGISTRY}/${SERVICE}").Tag }}'
-      - uses: git-push
-        config:
-          path: ./repo
-EOF
+      - ${SVC}-staging"
 
-    echo -e "  ${GREEN}✅${NC} Created stages/${SERVICE}-production.yaml"
-    TOTAL_FILES=$((TOTAL_FILES + 1))
 done
 
-    echo ""
-    END_TIME=$(date +%s)
-    DURATION=$((END_TIME - START_TIME))
+WAREHOUSES=$(find "$OUT/warehouses" -name '*.yaml' | wc -l | tr -d ' ')
+STAGES=$(find "$OUT/stages" -name '*.yaml' | wc -l | tr -d ' ')
+echo "Generated: 1 project, ${WAREHOUSES} warehouses, ${STAGES} stages → ${OUT}/"
 
-    echo -e "${GREEN}✨ Generation complete!${NC}"
-    echo ""
-    echo "📊 Summary:"
-    echo "  - 1 Project manifest"
-    echo "  - $(find "${GENERATED_DIR}/warehouses" -name "*.yaml" -type f | wc -l | tr -d ' ') Warehouse manifests"
-    echo "  - $(find "${GENERATED_DIR}/stages" -name "*.yaml" -type f | wc -l | tr -d ' ') Stage manifests"
-    echo -e "  - ${TOTAL_FILES} total files generated in ${DURATION}s"
-    echo ""
-    echo "📁 Output directory: ${GENERATED_DIR}"
-    echo ""
+# Optional: apply directly
+if [[ "${1:-}" == "--apply" ]]; then
+  command -v kubectl &>/dev/null || { echo "Error: kubectl is required"; exit 1; }
+  kubectl apply -f "$OUT/project.yaml"
+  kubectl apply -f "$OUT/warehouses/"
+  kubectl apply -f "$OUT/stages/"
+  echo "Applied to cluster."
 fi
-
-# Show diff if requested
-if [ "$SHOW_DIFF" = true ]; then
-    echo "📊 Differences (if any changes detected):"
-    echo ""
-    if command -v git &> /dev/null && git rev-parse --git-dir > /dev/null 2>&1; then
-        # If in git repo, show git diff style
-        git diff --no-index --color=always /dev/null "${GENERATED_DIR}" 2>/dev/null || true
-    else
-        # Otherwise just list files
-        echo "Generated files:"
-        find "${GENERATED_DIR}" -name "*.yaml" -type f | sort
-    fi
-    echo ""
-fi
-
-# Dry-run validation
-if [ "$DRY_RUN" = true ]; then
-    echo "🧪 Validating with kubectl dry-run..."
-    if kubectl apply --dry-run=client -f "${GENERATED_DIR}/" &> /dev/null; then
-        echo -e "  ${GREEN}✅${NC} All manifests are valid"
-    else
-        echo -e "  ${RED}❌ Validation failed:${NC}"
-        kubectl apply --dry-run=client -f "${GENERATED_DIR}/"
-        exit 1
-    fi
-    echo ""
-fi
-
-# Verification or Auto-apply section
-if [ "$VERIFY_ONLY" = true ] || [ "$AUTO_APPLY" = true ]; then
-    if [ "$AUTO_APPLY" = true ]; then
-        echo -e "${BLUE}🚀 Applying to cluster...${NC}"
-        echo ""
-
-        # Apply project first (for promotion policies)
-        echo "  📝 Applying project..."
-        kubectl apply -f "${GENERATED_DIR}/project.yaml"
-
-        # Apply warehouses
-        echo "  📦 Applying warehouses..."
-        kubectl apply -f "${GENERATED_DIR}/warehouses/"
-
-        # Apply stages
-        echo "  🎯 Applying stages..."
-        kubectl apply -f "${GENERATED_DIR}/stages/"
-
-        echo ""
-        echo -e "${GREEN}✅ All resources applied successfully!${NC}"
-        echo ""
-    fi
-
-    # Verification (runs for both --verify-only and --apply)
-    echo "🔍 Verification:"
-    kubectl get project "${PROJECT}" -n "${NAMESPACE}" 2>/dev/null || true
-    kubectl get warehouses -n "${NAMESPACE}" 2>/dev/null || true
-    echo ""
-    echo "📊 Stage status:"
-    if command -v kargo &> /dev/null; then
-        kargo get stages --project="${PROJECT}" || kubectl get stages -n "${NAMESPACE}"
-    else
-        kubectl get stages -n "${NAMESPACE}"
-    fi
-else
-    echo "Next steps:"
-    echo "  1. Review generated files in ${GENERATED_DIR}/"
-    echo -e "  2. Validate: ${YELLOW}./generate.sh --dry-run${NC}"
-    echo "  3. Apply to cluster: kubectl apply -f ${GENERATED_DIR}/"
-    echo "  4. Verify: kargo get stages -n ${NAMESPACE}"
-    echo ""
-    echo -e "💡 Tip: Use '${YELLOW}./generate.sh --apply${NC}' to generate and apply in one step"
-    echo -e "💡 Tip: Use '${YELLOW}./generate.sh --verify-only${NC}' to verify already-applied resources"
-fi
-
-# kubectl delete warehouses --all -n microsvcs 2>&1 && sleep 2 && kubectl apply -f /Users/daparicio/code/gitlab.com/davidaparicio/microsvcs/kargo/generated/warehouses/ 2>&1 && kubectl apply -f /Users/daparicio/code/gitlab.com/davidaparicio/microsvcs/kargo/generated/stages/ 2>&1
