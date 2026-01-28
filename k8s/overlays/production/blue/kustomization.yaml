@@ -9,7 +9,8 @@ commonLabels:
   app.kubernetes.io/instance: blue-production
   environment: production
 images:
-- name: quay.io/davidaparicio/blue
+- name: quay.io/davidaparicio/app
+  newName: quay.io/davidaparicio/blue
   newTag: 2.6.0
 replicas:
 - name: app

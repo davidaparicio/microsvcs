@@ -9,7 +9,8 @@ commonLabels:
   app.kubernetes.io/instance: red-development
   environment: development
 images:
-- name: quay.io/davidaparicio/red
+- name: quay.io/davidaparicio/app
+  newName: quay.io/davidaparicio/red
   newTag: sha-e2dfaba
 replicas:
 - name: app

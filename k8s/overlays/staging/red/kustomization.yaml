@@ -9,7 +9,8 @@ commonLabels:
   app.kubernetes.io/instance: red-staging
   environment: staging
 images:
-- name: quay.io/davidaparicio/red
+- name: quay.io/davidaparicio/app
+  newName: quay.io/davidaparicio/red
   newTag: 2.6.1
 replicas:
 - name: app

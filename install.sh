@@ -24,7 +24,7 @@ fi
 ARGO_CD_CHART_VERSION=8.1.4
 ARGO_ROLLOUTS_CHART_VERSION=2.40.1
 CERT_MANAGER_CHART_VERSION=v1.18.2
-KARGO_VERSION="latest"  # or specify version like v0.8.0
+KARGO_VERSION="1.8.9"  # latest or specify version like v0.8.0
 INGRESS_NGINX_VERSION=v1.14.2
 
 # Configuration
@@ -175,7 +175,8 @@ helm upgrade --install argocd argo-cd \
   --set dex.enabled=false \
   --set notifications.enabled=false \
   --set server.service.type=NodePort \
-  --set server.service.nodePortHttp=31443 \
+  --set server.service.nodePortHttp=32443 \
+  --set server.service.nodePortHttps=31443 \
   --set server.extensions.enabled=true \
   --set 'server.extensions.contents[0].name=argo-rollouts' \
   --set 'server.extensions.contents[0].url=https://github.com/argoproj-labs/rollout-extension/releases/download/v0.3.3/extension.tar' \
