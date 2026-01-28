@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: docker.io/davidaparicio/app:latest
+          image: quay.io/davidaparicio/app:latest
           ports:
             - containerPort: 8080
               protocol: TCP

@@ -6,7 +6,7 @@ project: microsvcs
 namespace: microsvcs
 gitRepo: https://github.com/davidaparicio/microsvcs.git
 gitBranch: main
-dockerRegistry: docker.io/davidaparicio
+dockerRegistry: quay.io/davidaparicio
 
 # Microservices to manage
 services:

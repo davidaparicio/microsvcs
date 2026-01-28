@@ -223,7 +223,7 @@ else
     echo "     Secrets not configured. To set up Kargo credentials:"
     echo "     1. cd kargo"
     echo "     2. cp .env.example .env"
-    echo "     3. Edit .env with your GitHub and DockerHub credentials"
+    echo "     3. Edit .env with your GitHub and Quay.io credentials"
     echo "     4. ./apply-secrets.sh"
 fi
 echo ""

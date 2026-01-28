@@ -9,8 +9,8 @@ commonLabels:
   app.kubernetes.io/instance: blue-development
   environment: development
 images:
-- name: docker.io/davidaparicio/app
-  newName: docker.io/davidaparicio/blue
+- name: quay.io/davidaparicio/app
+  newName: quay.io/davidaparicio/blue
   newTag: sha-f0ad6755200fac2059e615a43d68d5d989a3df88
 replicas:
 - name: app
