@@ -18,7 +18,7 @@ permissions:
 
 env:
   APP_NAME: color
-  IMAGE_REPOSITORY: 'docker.io'
+  IMAGE_REPOSITORY: 'quay.io'
 
 jobs:
   release:
@@ -47,11 +47,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 #v6
 
-      - name: Login to Docker Hub
+      - name: Login to Quay.io
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef #v3
         with:
-          username: ${{ vars.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: quay.io
+          username: ${{ vars.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_TOKEN }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 #v3
       - name: Set up Docker Buildx
@@ -62,7 +63,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: docker.io/${{ vars.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:${{ needs.release.outputs.tag_name }}-${{ matrix.env }}
+          tags: quay.io/${{ vars.QUAY_USERNAME }}/${{ env.APP_NAME }}:${{ needs.release.outputs.tag_name }}-${{ matrix.env }}
           platforms: linux/amd64,linux/arm64
           build-args: |
             VERSION=${{ needs.release.outputs.tag_name }}

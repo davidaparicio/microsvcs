@@ -31,7 +31,7 @@ source "$ENV_FILE"
 set +a
 
 # Verify required variables are set
-required_vars=("GITHUB_USERNAME" "GITHUB_PAT" "DOCKERHUB_USERNAME" "DOCKERHUB_PAT")
+required_vars=("GITHUB_USERNAME" "GITHUB_PAT" "QUAY_USERNAME" "QUAY_PAT")
 for var in "${required_vars[@]}"; do
     if [ -z "${!var:-}" ]; then
         echo "Error: $var is not set in .env file"
@@ -52,11 +52,11 @@ kubectl label namespace microsvcs kargo.akuity.io/project=true --overwrite &> /d
 echo "- Applying GitHub credentials..."
 envsubst < "${SCRIPT_DIR}/git-credentials.yaml" | kubectl apply -f -
 
-# Apply DockerHub credentials
-echo "- Applying DockerHub credentials..."
-envsubst < "${SCRIPT_DIR}/dockerhub-credentials.yaml" | kubectl apply -f -
+# Apply Quay.io credentials
+echo "- Applying Quay.io credentials..."
+envsubst < "${SCRIPT_DIR}/quay-credentials.yaml" | kubectl apply -f -
 
 echo "✓ Secrets applied successfully!"
 echo ""
 echo "Verify with:"
-echo "  kubectl get secrets -n microsvcs github-creds dockerhub-creds"
+echo "  kubectl get secrets -n microsvcs github-creds quay-creds"

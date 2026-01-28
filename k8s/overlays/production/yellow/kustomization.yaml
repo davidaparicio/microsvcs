@@ -9,8 +9,8 @@ commonLabels:
   app.kubernetes.io/instance: yellow-production
   environment: production
 images:
-- name: docker.io/davidaparicio/app
-  newName: docker.io/davidaparicio/yellow
+- name: quay.io/davidaparicio/app
+  newName: quay.io/davidaparicio/yellow
   newTag: 2.5.0
 replicas:
 - name: app
