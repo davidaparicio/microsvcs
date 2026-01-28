@@ -13,6 +13,9 @@ spec:
       - ${SVC}-staging
   promotionTemplate:
     spec:
+      vars:
+      - name: image
+        value: ${REGISTRY}/${SVC}
       steps:
       - uses: git-clone
         config:
@@ -25,11 +28,11 @@ spec:
           path: ./repo/${KUSTOMIZE_BASE}/production/${SVC}
           images:
           - image: ${REGISTRY}/${SVC}
-            tag: ${{ imageFrom("${REGISTRY}/${SVC}").Tag }}
+            tag: ${{ imageFrom(vars.image).Tag }}
       - uses: git-commit
         config:
           path: ./repo
-          message: '[prd] ${SVC} use ${{ imageFrom("${REGISTRY}/${SVC}").Tag }}'
+          message: '[prd] ${SVC} use ${{ imageFrom(vars.image).Tag }}'
       - uses: git-push
         config:
           path: ./repo

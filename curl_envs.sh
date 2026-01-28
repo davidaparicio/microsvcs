@@ -8,7 +8,7 @@
 # If you need to change the NodePort for ingress-nginx controller, uncomment and modify the line below
 # kubectl patch svc ingress-nginx-controller -n ingress-nginx --type='json' -p='[{"op": "replace", "path": "/spec/ports/0/nodePort", "value": 30080}]'
 
-INGRESS_PORT=80
+#INGRESS_PORT=80
 PORT="${INGRESS_PORT:-30080}"
 #PORT="${INGRESS_PORT:-$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}' 2>/dev/null || echo 80)}"
 
