@@ -10,7 +10,7 @@ commonLabels:
   environment: production
 images:
 - name: quay.io/davidaparicio/blue
-  newTag: 2.6.0
+  newTag: 2.6.1
 replicas:
 - name: app
   count: 3
