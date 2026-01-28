@@ -26,9 +26,10 @@ spec:
         config:
           path: ./repo/${KUSTOMIZE_BASE}/development/${SVC}
           images:
-          # IMPORTANT: Must use /app to match the 'name' field in kustomization.yaml
-          # The overlays use: name: quay.io/davidaparicio/app + newName: quay.io/davidaparicio/${SVC}
+          # 'image' must match the 'name' field in kustomization.yaml (quay.io/davidaparicio/app)
+          # 'newName' preserves the overlay's newName (quay.io/davidaparicio/${SVC})
           - image: ${REGISTRY}/app
+            newName: ${REGISTRY}/${SVC}
             tag: ${{ imageFrom(vars.image).Tag }}
       - uses: git-commit
         config:
