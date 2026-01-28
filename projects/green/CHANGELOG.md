@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/davidaparicio/microsvcs/compare/green/2.5.2...green/2.6.0) (2026-01-28)
+
+
+### Features
+
+* **color:** new distribution ([#37](https://github.com/davidaparicio/microsvcs/issues/37)) ([8bf4420](https://github.com/davidaparicio/microsvcs/commit/8bf442045826c7a7743bd7756e2f60119ff59cda))
+
 ## [2.5.2](https://github.com/davidaparicio/microsvcs/compare/green/2.5.1...green/2.5.2) (2026-01-27)
 
 
