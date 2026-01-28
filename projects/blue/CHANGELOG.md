@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/davidaparicio/microsvcs/compare/blue/2.6.0...blue/2.6.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* **color:** 80|20 color distribution updated ([#43](https://github.com/davidaparicio/microsvcs/issues/43)) ([8ddbd45](https://github.com/davidaparicio/microsvcs/commit/8ddbd4588558f8f9ba965cf2dedba6656d283df7))
+
 ## [2.6.0](https://github.com/davidaparicio/microsvcs/compare/blue/2.5.2...blue/2.6.0) (2026-01-28)
 
 
