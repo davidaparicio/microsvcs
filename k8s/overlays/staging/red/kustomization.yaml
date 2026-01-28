@@ -12,6 +12,8 @@ images:
 - name: quay.io/davidaparicio/app
   newName: quay.io/davidaparicio/red
   newTag: 2.5.0
+- name: quay.io/davidaparicio/red
+  newTag: 2.6.0
 replicas:
 - name: app
   count: 2
