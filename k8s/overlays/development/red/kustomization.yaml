@@ -13,7 +13,7 @@ images:
   newName: quay.io/davidaparicio/red
   newTag: sha-f0ad6755200fac2059e615a43d68d5d989a3df88
 - name: quay.io/davidaparicio/red
-  newTag: sha-f1ceac9
+  newTag: sha-e2dfaba
 replicas:
 - name: app
   count: 1
