@@ -1,141 +1,58 @@
 #!/bin/bash
 set -euo pipefail
 
-# Kargo manifest generator — reads config.yaml, writes generated/
+# Kargo manifest generator — renders templates/ with config.yaml values into generated/
 # Usage: ./generate.sh [--apply]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG="${SCRIPT_DIR}/config.yaml"
+TEMPLATES="${SCRIPT_DIR}/templates"
 OUT="${SCRIPT_DIR}/generated"
 
-# Check dependencies
 command -v yq &>/dev/null || { echo "Error: yq is required. https://github.com/mikefarah/yq#install"; exit 1; }
+command -v envsubst &>/dev/null || { echo "Error: envsubst is required (part of gettext)."; exit 1; }
 
-# Read config
-PROJECT=$(yq '.project' "$CONFIG")
-NAMESPACE=$(yq '.namespace' "$CONFIG")
-GIT_REPO=$(yq '.gitRepo' "$CONFIG")
-GIT_BRANCH=$(yq '.gitBranch' "$CONFIG")
-REGISTRY=$(yq '.dockerRegistry' "$CONFIG")
-KUSTOMIZE_BASE=$(yq '.kustomizeBasePath' "$CONFIG")
+# Read config into environment variables
+export PROJECT=$(yq -r '.project' "$CONFIG")
+export NAMESPACE=$(yq -r '.namespace' "$CONFIG")
+export GIT_REPO=$(yq -r '.gitRepo' "$CONFIG")
+export GIT_BRANCH=$(yq -r '.gitBranch' "$CONFIG")
+export REGISTRY=$(yq -r '.dockerRegistry' "$CONFIG")
+export KUSTOMIZE_BASE=$(yq -r '.kustomizeBasePath' "$CONFIG")
 
-mapfile -t SERVICES < <(yq '.services[]' "$CONFIG")
+export DEV_PATTERN=$(yq -r '.environments[] | select(.name == "development") | .warehouse.imageTagPattern' "$CONFIG")
+export DEV_STRATEGY=$(yq -r '.environments[] | select(.name == "development") | .warehouse.imageSelectionStrategy' "$CONFIG")
+export DEV_LIMIT=$(yq -r '.environments[] | select(.name == "development") | .warehouse.discoveryLimit' "$CONFIG")
+
+export REL_SEMVER=$(yq -r '.environments[] | select(.name == "staging") | .warehouse.semverConstraint' "$CONFIG")
+export REL_STRATEGY=$(yq -r '.environments[] | select(.name == "staging") | .warehouse.imageSelectionStrategy' "$CONFIG")
+export REL_LIMIT=$(yq -r '.environments[] | select(.name == "staging") | .warehouse.discoveryLimit' "$CONFIG")
+
+mapfile -t SERVICES < <(yq -r '.services[]' "$CONFIG")
 
 echo "Generating Kargo manifests for: ${SERVICES[*]}"
 
 rm -rf "$OUT"
 mkdir -p "$OUT"/{warehouses,stages}
 
-# --- Project ---
-cat > "$OUT/project.yaml" <<EOF
-apiVersion: kargo.akuity.io/v1alpha1
-kind: Project
-metadata:
-  name: ${PROJECT}
-EOF
+# Render a template file, substituting only our variables (leaves ${{ ... }} Kargo expressions alone)
+VARS='${PROJECT} ${NAMESPACE} ${GIT_REPO} ${GIT_BRANCH} ${REGISTRY} ${KUSTOMIZE_BASE} ${SVC} ${DEV_PATTERN} ${DEV_STRATEGY} ${DEV_LIMIT} ${REL_SEMVER} ${REL_STRATEGY} ${REL_LIMIT}'
 
-# --- Per-service resources ---
+render() {
+  envsubst "$VARS" < "$1" > "$2"
+}
+
+# Project
+render "$TEMPLATES/project.yaml" "$OUT/project.yaml"
+
+# Per-service resources
 for SVC in "${SERVICES[@]}"; do
-
-  # Warehouse: dev (sha-* tags)
-  DEV_PATTERN=$(yq '.environments[] | select(.name == "development") | .warehouse.imageTagPattern' "$CONFIG")
-  DEV_STRATEGY=$(yq '.environments[] | select(.name == "development") | .warehouse.imageSelectionStrategy' "$CONFIG")
-  DEV_LIMIT=$(yq '.environments[] | select(.name == "development") | .warehouse.discoveryLimit' "$CONFIG")
-
-  cat > "$OUT/warehouses/${SVC}-dev.yaml" <<EOF
-apiVersion: kargo.akuity.io/v1alpha1
-kind: Warehouse
-metadata:
-  name: ${SVC}-dev
-  namespace: ${NAMESPACE}
-spec:
-  subscriptions:
-  - image:
-      repoURL: ${REGISTRY}/${SVC}
-      imageSelectionStrategy: ${DEV_STRATEGY}
-      allowTags: "${DEV_PATTERN}"
-      discoveryLimit: ${DEV_LIMIT}
-EOF
-
-  # Warehouse: releases (semver tags)
-  REL_SEMVER=$(yq '.environments[] | select(.name == "staging") | .warehouse.semverConstraint' "$CONFIG")
-  REL_STRATEGY=$(yq '.environments[] | select(.name == "staging") | .warehouse.imageSelectionStrategy' "$CONFIG")
-  REL_LIMIT=$(yq '.environments[] | select(.name == "staging") | .warehouse.discoveryLimit' "$CONFIG")
-
-  cat > "$OUT/warehouses/${SVC}-releases.yaml" <<EOF
-apiVersion: kargo.akuity.io/v1alpha1
-kind: Warehouse
-metadata:
-  name: ${SVC}-releases
-  namespace: ${NAMESPACE}
-spec:
-  subscriptions:
-  - image:
-      repoURL: ${REGISTRY}/${SVC}
-      imageSelectionStrategy: ${REL_STRATEGY}
-      semverConstraint: "${REL_SEMVER}"
-      discoveryLimit: ${REL_LIMIT}
-EOF
-
-  # Helper: generate a stage with git-clone → kustomize-set-image → git-commit → git-push
-  gen_stage() {
-    local name=$1 env=$2 freight_yaml=$3
-    cat > "$OUT/stages/${name}.yaml" <<EOF
-apiVersion: kargo.akuity.io/v1alpha1
-kind: Stage
-metadata:
-  name: ${name}
-  namespace: ${NAMESPACE}
-spec:
-  requestedFreight:
-${freight_yaml}
-  promotionTemplate:
-    spec:
-      steps:
-      - uses: git-clone
-        config:
-          repoURL: ${GIT_REPO}
-          checkout:
-          - branch: ${GIT_BRANCH}
-            path: ./repo
-      - uses: kustomize-set-image
-        config:
-          path: ./repo/${KUSTOMIZE_BASE}/${env}/${SVC}
-          images:
-          - image: ${REGISTRY}/${SVC}
-            tag: \${{ imageFrom("${REGISTRY}/${SVC}").Tag }}
-      - uses: git-commit
-        config:
-          path: ./repo
-          message: '[${env:0:3}] ${SVC} use \${{ imageFrom("${REGISTRY}/${SVC}").Tag }}'
-      - uses: git-push
-        config:
-          path: ./repo
-EOF
-  }
-
-  # Stage: development (direct from dev warehouse, auto-promote)
-  gen_stage "${SVC}-development" "development" "  - origin:
-      kind: Warehouse
-      name: ${SVC}-dev
-    sources:
-      direct: true"
-
-  # Stage: staging (direct from releases warehouse, auto-promote)
-  gen_stage "${SVC}-staging" "staging" "  - origin:
-      kind: Warehouse
-      name: ${SVC}-releases
-    sources:
-      direct: true"
-
-  # Stage: production (from staging, manual promote)
-  gen_stage "${SVC}-production" "production" "  - origin:
-      kind: Warehouse
-      name: ${SVC}-releases
-    sources:
-      stages:
-      - ${SVC}-staging"
-
+  export SVC
+  render "$TEMPLATES/warehouse-dev.yaml"      "$OUT/warehouses/${SVC}-dev.yaml"
+  render "$TEMPLATES/warehouse-releases.yaml"  "$OUT/warehouses/${SVC}-releases.yaml"
+  render "$TEMPLATES/stage-development.yaml"   "$OUT/stages/${SVC}-development.yaml"
+  render "$TEMPLATES/stage-staging.yaml"       "$OUT/stages/${SVC}-staging.yaml"
+  render "$TEMPLATES/stage-production.yaml"    "$OUT/stages/${SVC}-production.yaml"
 done
 
 WAREHOUSES=$(find "$OUT/warehouses" -name '*.yaml' | wc -l | tr -d ' ')

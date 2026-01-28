@@ -1,0 +1,12 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: ${SVC}-releases
+  namespace: ${NAMESPACE}
+spec:
+  subscriptions:
+  - image:
+      repoURL: ${REGISTRY}/${SVC}
+      imageSelectionStrategy: ${REL_STRATEGY}
+      semverConstraint: "${REL_SEMVER}"
+      discoveryLimit: ${REL_LIMIT}

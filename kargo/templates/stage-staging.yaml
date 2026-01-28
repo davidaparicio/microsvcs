@@ -1,0 +1,34 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: ${SVC}-staging
+  namespace: ${NAMESPACE}
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: ${SVC}-releases
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${GIT_REPO}
+          checkout:
+          - branch: ${GIT_BRANCH}
+            path: ./repo
+      - uses: kustomize-set-image
+        config:
+          path: ./repo/${KUSTOMIZE_BASE}/staging/${SVC}
+          images:
+          - image: ${REGISTRY}/${SVC}
+            tag: ${{ imageFrom("${REGISTRY}/${SVC}").Tag }}
+      - uses: git-commit
+        config:
+          path: ./repo
+          message: '[stg] ${SVC} use ${{ imageFrom("${REGISTRY}/${SVC}").Tag }}'
+      - uses: git-push
+        config:
+          path: ./repo
