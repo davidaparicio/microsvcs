@@ -12,6 +12,8 @@ images:
 - name: quay.io/davidaparicio/app
   newName: quay.io/davidaparicio/yellow
   newTag: sha-f1ceac9
+- name: quay.io/davidaparicio/yellow
+  newTag: sha-c8677f7
 replicas:
 - name: app
   count: 1
