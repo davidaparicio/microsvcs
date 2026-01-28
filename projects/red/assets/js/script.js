@@ -1,1 +1,1 @@
-setTimeout(function () { location.reload(1); }, 500)
+setTimeout(function () { location.reload(1); }, 20000)
