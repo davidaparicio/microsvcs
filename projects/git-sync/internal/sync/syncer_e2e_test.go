@@ -40,7 +40,7 @@ func TestE2E_SyncDemoFlags(t *testing.T) {
 	// Create temporary directory for synced files
 	tmpDir, err := os.MkdirTemp("", "git-sync-e2e-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Configure syncer to sync the color directory from the real repo
 	cfg := &config.Config{
@@ -143,7 +143,7 @@ func TestE2E_SyncSpecificFile(t *testing.T) {
 
 	tmpDir, err := os.MkdirTemp("", "git-sync-readme-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	cfg := &config.Config{
 		RepoURL:      "https://github.com/davidaparicio/microsvcs.git",
@@ -184,7 +184,7 @@ func TestE2E_MultipleSyncs(t *testing.T) {
 
 	tmpDir, err := os.MkdirTemp("", "git-sync-multi-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	cfg := &config.Config{
 		RepoURL:      "https://github.com/davidaparicio/microsvcs.git",
