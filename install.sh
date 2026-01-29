@@ -101,7 +101,7 @@ echo -e "  ${GREEN}✅${NC} All dependencies installed"
 echo ""
 
 # Clean install if requested
-if [ "$CLEAN_INSTALL" = true ]; then
+if [[ "$CLEAN_INSTALL" == true ]]; then
     echo -e "${YELLOW}🧹 Cleaning existing cluster...${NC}"
     kind delete cluster --name "${CLUSTER_NAME}" 2>/dev/null || true
     echo -e "  ${GREEN}✅${NC} Cluster deleted"
@@ -109,12 +109,12 @@ if [ "$CLEAN_INSTALL" = true ]; then
 fi
 
 # Create Kind cluster
-if [ "$SKIP_CLUSTER" = false ]; then
+if [[ "$SKIP_CLUSTER" == false ]]; then
     echo -e "${BLUE}📦 Creating Kind cluster...${NC}"
     echo "  Cluster: ${CLUSTER_NAME}"
     echo "  Config: ${KIND_CONFIG}"
 
-    if ! [ -f "${KIND_CONFIG}" ]; then
+    if ! [[ -f "${KIND_CONFIG}" ]]; then
         echo -e "${RED}❌ Error: Kind config not found at ${KIND_CONFIG}${NC}"
         exit 1
     fi
@@ -222,7 +222,7 @@ echo ""
 
 # Apply Kargo secrets (inline from kargo/apply-secrets.sh)
 echo -e "${BLUE}🔐 Applying Kargo secrets...${NC}"
-if [ -f "kargo/.env" ]; then
+if [[ -f "kargo/.env" ]]; then
     # Check if envsubst is available
     if ! command -v envsubst &> /dev/null; then
         echo -e "  ${YELLOW}⚠️  envsubst not found (required for credentials)${NC}"
@@ -240,12 +240,12 @@ if [ -f "kargo/.env" ]; then
         required_vars=("GITHUB_USERNAME" "GITHUB_PAT" "QUAY_USERNAME" "QUAY_PAT")
         missing_vars=()
         for var in "${required_vars[@]}"; do
-            if [ -z "${!var:-}" ]; then
+            if [[ -z "${!var:-}" ]]; then
                 missing_vars+=("$var")
             fi
         done
 
-        if [ ${#missing_vars[@]} -gt 0 ]; then
+        if [[ ${#missing_vars[@]} -gt 0 ]]; then
             echo -e "  ${YELLOW}⚠️  Missing variables in .env file: ${missing_vars[*]}${NC}"
             echo "     Edit kargo/.env and add the missing credentials"
             echo "     Then run: cd kargo && ./apply-secrets.sh"
@@ -289,7 +289,7 @@ sleep 10  # Give ArgoCD a moment to register and auto-sync applications
 # for service in red blue green yellow; do app="${service}-staging"; echo -n "   • ${app}: "; sync_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.sync.status}' 2>/dev/null); health_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.health.status}' 2>/dev/null); echo "${sync_status} / ${health_status}"; done
 # for service in red blue green yellow; do app="${service}-production"; echo -n "   • ${app}: "; sync_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.sync.status}' 2>/dev/null); health_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.health.status}' 2>/dev/null); echo "${sync_status} / ${health_status}"; done
 
-if [ "$SKIP_WAIT" = false ]; then
+if [[ "$SKIP_WAIT" == false ]]; then
     echo -e "${YELLOW}⏳ Waiting for applications to be synced and healthy...${NC}"
     echo "   This may take several minutes..."
 
@@ -327,7 +327,7 @@ fi
 
 # Generate and apply Kargo configuration (after ArgoCD apps are synced)
 echo -e "${BLUE}📦 Generating and applying Kargo configuration...${NC}"
-if [ -f "kargo/generate.sh" ]; then
+if [[ -f "kargo/generate.sh" ]]; then
     if (cd kargo && bash generate.sh --apply); then
         echo -e "  ${GREEN}✅${NC} Kargo configuration generated and applied"
     else
