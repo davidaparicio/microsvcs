@@ -67,6 +67,12 @@ test: compile ## Run go tests
 	@echo "Testing..."
 	go test -v ./...
 
+.PHONY: test-coverage
+test-coverage: compile ## Run tests with coverage report
+	@echo "Testing with coverage..."
+	go test -v -cover -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out
+
 .PHONY: clean
 clean: ## Clean artifacts
 	@echo "Cleaning..."
