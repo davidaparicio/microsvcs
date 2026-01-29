@@ -31,8 +31,8 @@ Starting HTTP server (darwin/arm64) listening on port 8080.
 
 ```
 ┌─────────────┐     ┌──────────────────┐     ┌─────────────┐
-│ GitHub Push │────>│ Build & Publish  │────>│ Docker Hub  │
-│  to main    │     │ (creates image)  │     │ (Warehouse) │
+│ GitHub Push │────>│ Build & Publish  │────>│  Quay.io    │
+│  to main    │     │ (creates image)  │     │ (Registry)  │
 └─────────────┘     └──────────────────┘     └──────┬──────┘
                                                     │
                     ┌───────────────────────────────┘
@@ -69,13 +69,22 @@ helm install kargo oci://ghcr.io/akuity/kargo-charts/kargo \
   --set api.adminAccount.tokenSigningKey="sdlqffxl4dH73BHZGCo8GhMh7u2/ueHk5lJB0raC1OY="
 ```
 
-### 2. Apply Kargo Manifests
+### 2. Generate and Apply Kargo Manifests
+
+Manifests are generated from templates using `kargo/config.yaml` as the single source of truth.
 
 ```bash
-kubectl apply -f kargo/project.yaml
-kubectl apply -f kargo/warehouses/
-kubectl apply -f kargo/stages/
+# Generate manifests into kargo/generated/
+./kargo/generate.sh
+
+# Or generate and apply in one step
+./kargo/generate.sh --apply
 ```
+
+This renders the templates for all services (red, blue, green, yellow) and produces:
+- 1 project + 1 project-config
+- 8 warehouses (2 per service: `{svc}-dev` + `{svc}-releases`)
+- 12 stages (3 per service: development, staging, production)
 
 ### 3. Configure Credentials
 
@@ -126,35 +135,22 @@ kubectl create secret generic dockerhub-creds \
 git commit -m "feat(red): add new endpoint"
 git push origin main
 
-# Kargo detects new image in Warehouse and auto-promotes to dev
+# Kargo detects new SHA-tagged image in the dev Warehouse and auto-promotes
 # Check status:
 kargo get freight --project microsvcs
 kargo get stages --project microsvcs
 ```
 
-### 2. Promote Single Service to Staging
+### 2. Auto-Promotion to Staging (Automatic)
 
 ```bash
-# List available freight (images) that passed development
-kargo get freight --project microsvcs --stage red-development
-
-# Promote red service to staging
-kargo promote --project microsvcs --stage red-staging
-
-# Or promote specific freight by ID
-kargo promote --project microsvcs --stage red-staging --freight abc123def
+# When a new semver-tagged image is published to quay.io/davidaparicio/{svc},
+# the releases Warehouse detects it and staging auto-promotes.
+# Check status:
+kargo get freight --project microsvcs --stage red-staging
 ```
 
-### 3. Promote All Services to Staging (Batch)
-
-```bash
-# Promote all 4 services to staging
-for service in red blue green yellow; do
-  kargo promote --project microsvcs --stage ${service}-staging
-done
-```
-
-### 4. Promote to Production
+### 3. Promote to Production (Manual)
 
 ```bash
 # First, check what's currently in staging
@@ -165,6 +161,15 @@ kargo promote --project microsvcs --stage red-production
 
 # Monitor the promotion status
 kargo get promotions --project microsvcs --stage red-production
+```
+
+### 4. Promote All Services to Production (Batch)
+
+```bash
+# Promote all 4 services to production
+for service in red blue green yellow; do
+  kargo promote --project microsvcs --stage ${service}-production
+done
 ```
 
 ### 5. Promote Specific Freight Through All Stages
@@ -190,9 +195,9 @@ kargo promote --project microsvcs --stage red-production --freight $FREIGHT_ID
 kargo get freight --project microsvcs --stage red-production
 
 # Example output:
-# NAME          IMAGE                           AGE
-# abc123def     davidaparicio/red:sha-a1b2c3d   2h    (current)
-# xyz789ghi     davidaparicio/red:sha-x7y8z9g   3d    (previous)
+# NAME          IMAGE                               AGE
+# abc123def     quay.io/davidaparicio/red:3.2.0     2h    (current)
+# xyz789ghi     quay.io/davidaparicio/red:3.1.0     3d    (previous)
 
 # 2. Promote the previous freight to rollback
 kargo promote --project microsvcs --stage red-production --freight xyz789ghi
@@ -223,7 +228,8 @@ kargo get project microsvcs
 kargo get stages --project microsvcs
 
 # View freight in a warehouse
-kargo get freight --project microsvcs --warehouse red
+kargo get freight --project microsvcs --warehouse red-dev
+kargo get freight --project microsvcs --warehouse red-releases
 
 # View promotion history
 kargo get promotions --project microsvcs
@@ -239,25 +245,47 @@ kargo describe stage red-production --project microsvcs
 
 ```
 kargo/
-├── project.yaml                 # Project with promotion policies
-├── warehouses/
-│   ├── red.yaml                 # Watches docker.io/davidaparicio/red
-│   ├── blue.yaml                # Watches docker.io/davidaparicio/blue
-│   ├── green.yaml               # Watches docker.io/davidaparicio/green
-│   └── yellow.yaml              # Watches docker.io/davidaparicio/yellow
-└── stages/
-    ├── {service}-development.yaml   # Auto-promotion enabled
-    ├── {service}-staging.yaml       # Manual promotion
-    └── {service}-production.yaml    # Manual promotion
+├── config.yaml                  # Single source of truth for all settings
+├── generate.sh                  # Renders templates into generated/
+├── apply-secrets.sh             # Creates credential secrets
+├── git-credentials.yaml         # Git credentials template
+├── quay-credentials.yaml        # Quay.io credentials template
+├── templates/
+│   ├── project.yaml             # Project resource template
+│   ├── project-config.yaml      # Promotion policies (auto-promote settings)
+│   ├── warehouse-dev.yaml       # Dev warehouse (SHA tags, NewestBuild)
+│   ├── warehouse-releases.yaml  # Releases warehouse (semver, SemVer)
+│   ├── stage-development.yaml   # Dev stage template
+│   ├── stage-staging.yaml       # Staging stage template
+│   └── stage-production.yaml    # Production stage template
+└── generated/                   # Output from generate.sh (not committed)
+    ├── project.yaml
+    ├── project-config.yaml
+    ├── warehouses/
+    │   ├── {svc}-dev.yaml       # Watches quay.io/davidaparicio/{svc} (SHA tags)
+    │   └── {svc}-releases.yaml  # Watches quay.io/davidaparicio/{svc} (semver)
+    └── stages/
+        ├── {svc}-development.yaml
+        ├── {svc}-staging.yaml
+        └── {svc}-production.yaml
 ```
+
+## Warehouses
+
+Each service has two warehouses:
+
+| Warehouse | Image Selection | Tag Pattern | Purpose |
+|-----------|----------------|-------------|---------|
+| `{svc}-dev` | NewestBuild | `^sha-.*` | Tracks commit-based builds for development |
+| `{svc}-releases` | SemVer | `>=0.0.0` | Tracks versioned releases for staging/production |
 
 ## Promotion Flow
 
-| Stage | Auto-Promote | Subscribes To |
-|-------|--------------|---------------|
-| development | Yes | Warehouse (new images) |
-| staging | No | development stage |
-| production | No | staging stage |
+| Stage | Auto-Promote | Freight Source |
+|-------|--------------|----------------|
+| development | Yes | `{svc}-dev` warehouse (SHA-tagged images) |
+| staging | Yes | `{svc}-releases` warehouse (semver-tagged images) |
+| production | No | `{svc}-releases` warehouse via staging stage |
 
 ## Troubleshooting
 
