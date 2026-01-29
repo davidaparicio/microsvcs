@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/davidaparicio/microsvcs/compare/git-sync/0.2.0...git-sync/0.2.1) (2026-01-29)
+
+
+### Bug Fixes
+
+* **git-sync:** linter fixes, Error return value of  is not checked (errcheck) ([#92](https://github.com/davidaparicio/microsvcs/issues/92)) ([f28f48f](https://github.com/davidaparicio/microsvcs/commit/f28f48f3c62a7c46df056ba0a37187c540d419a6))
+
 ## [0.2.0](https://github.com/davidaparicio/microsvcs/compare/git-sync/0.1.0...git-sync/0.2.0) (2026-01-29)
 
 
