@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/davidaparicio/microsvcs/projects/blue/internal/name"
@@ -49,13 +52,16 @@ func main() {
 	configFile := flag.String("configFile", "./demo-flags.goff.yaml", "flags.goff.yaml")
 	flag.Parse()
 
-	_ = ffclient.Init(ffclient.Config{
+	if err := ffclient.Init(ffclient.Config{
 		PollingInterval: 1 * time.Second,
 		Context:         context.Background(),
 		Retriever: &fileretriever.Retriever{
 			Path: *configFile,
 		},
-	})
+	}); err != nil {
+		log.Fatalf("Failed to initialize feature flags: %v", err)
+	}
+	defer ffclient.Close()
 
 	e := echo.New()
 	e.HideBanner = true
@@ -80,7 +86,22 @@ func main() {
 		port = "8080"
 	}
 	fmt.Printf("Starting HTTP server (%s/%s) listening on port %s.\n", runtime.GOOS, runtime.GOARCH, port)
-	e.Logger.Fatal(e.Start(":" + port))
+
+	go func() {
+		if err := e.Start(":" + port); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal("shutting down the server")
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
 }
 
 type TemplateRegistry struct {
@@ -107,7 +128,8 @@ func getCircle(color string) string {
 	if exists {
 		return circle
 	}
-	return ""
+	log.Printf("Unknown color for circle emoji: %q", color)
+	return "⬜"
 }
 
 func apiHandler(c echo.Context) error {
