@@ -1,0 +1,61 @@
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /color/docker
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
+    directory: /color
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /projects/blue/docker
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
+    directory: /projects/blue
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /projects/git-sync/docker
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
+    directory: /projects/git-sync
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /projects/green/docker
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
+    directory: /projects/green
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /projects/red/docker
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
+    directory: /projects/red
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /projects/yellow/docker
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
+    directory: /projects/yellow
+    schedule:
+      interval: daily
