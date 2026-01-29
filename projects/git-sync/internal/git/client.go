@@ -18,7 +18,7 @@ type Client struct {
 
 func NewClient(cfg *config.Config) (*Client, error) {
 	// Create temporary work directory with unique name
-	workDir, err := os.MkdirTemp("/tmp", "git-sync-work-*")
+	workDir, err := os.MkdirTemp("", "git-sync-work-*")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create work directory: %w", err)
 	}
