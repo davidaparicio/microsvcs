@@ -250,11 +250,9 @@ if [ -f "kargo/.env" ]; then
             echo "     Edit kargo/.env and add the missing credentials"
             echo "     Then run: cd kargo && ./apply-secrets.sh"
         else
-            # Ensure namespace exists with Kargo project label
-            if ! kubectl get namespace microsvcs &> /dev/null; then
-                echo "  • Creating namespace microsvcs..."
-                kubectl create namespace microsvcs
-            fi
+            # Ensure namespace exists with Kargo project label (idempotent to avoid race with Kargo)
+            echo "  • Ensuring namespace microsvcs exists..."
+            kubectl create namespace microsvcs --dry-run=client -o yaml | kubectl apply -f -
             kubectl label namespace microsvcs kargo.akuity.io/project=true --overwrite &> /dev/null
 
             # Apply git credentials
