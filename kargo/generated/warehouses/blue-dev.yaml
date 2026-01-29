@@ -1,0 +1,12 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: blue-dev
+  namespace: microsvcs
+spec:
+  subscriptions:
+  - image:
+      repoURL: quay.io/davidaparicio/blue
+      imageSelectionStrategy: NewestBuild
+      allowTags: "^sha-.*"
+      discoveryLimit: 10

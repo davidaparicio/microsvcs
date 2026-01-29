@@ -1,0 +1,12 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: red-dev
+  namespace: microsvcs
+spec:
+  subscriptions:
+  - image:
+      repoURL: quay.io/davidaparicio/red
+      imageSelectionStrategy: NewestBuild
+      allowTags: "^sha-.*"
+      discoveryLimit: 10

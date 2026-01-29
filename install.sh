@@ -220,15 +220,53 @@ kubectl apply -f argocd/applicationset.yaml
 echo -e "  ${GREEN}✅${NC} ArgoCD resources applied"
 echo ""
 
-# Apply Kargo secrets
+# Apply Kargo secrets (inline from kargo/apply-secrets.sh)
 echo -e "${BLUE}🔐 Applying Kargo secrets...${NC}"
 if [ -f "kargo/.env" ]; then
-    if bash kargo/apply-secrets.sh 2>/dev/null; then
-        echo -e "  ${GREEN}✅${NC} Kargo secrets applied"
-    else
-        echo -e "  ${YELLOW}⚠️  Failed to apply secrets${NC}"
-        echo "     You can apply them manually later with:"
+    # Check if envsubst is available
+    if ! command -v envsubst &> /dev/null; then
+        echo -e "  ${YELLOW}⚠️  envsubst not found (required for credentials)${NC}"
+        echo "     Install: apt-get install gettext-base (Debian/Ubuntu) or brew install gettext (macOS)"
+        echo "     You can apply secrets manually later with:"
         echo -e "     ${YELLOW}cd kargo && ./apply-secrets.sh${NC}"
+    else
+        # Load environment variables from .env file
+        set -a
+        # shellcheck disable=SC1091
+        source kargo/.env 2>/dev/null || true
+        set +a
+
+        # Verify required variables are set
+        required_vars=("GITHUB_USERNAME" "GITHUB_PAT" "QUAY_USERNAME" "QUAY_PAT")
+        missing_vars=()
+        for var in "${required_vars[@]}"; do
+            if [ -z "${!var:-}" ]; then
+                missing_vars+=("$var")
+            fi
+        done
+
+        if [ ${#missing_vars[@]} -gt 0 ]; then
+            echo -e "  ${YELLOW}⚠️  Missing variables in .env file: ${missing_vars[*]}${NC}"
+            echo "     Edit kargo/.env and add the missing credentials"
+            echo "     Then run: cd kargo && ./apply-secrets.sh"
+        else
+            # Ensure namespace exists with Kargo project label
+            if ! kubectl get namespace microsvcs &> /dev/null; then
+                echo "  • Creating namespace microsvcs..."
+                kubectl create namespace microsvcs
+            fi
+            kubectl label namespace microsvcs kargo.akuity.io/project=true --overwrite &> /dev/null
+
+            # Apply git credentials
+            echo "  • Applying GitHub credentials..."
+            envsubst < kargo/git-credentials.yaml | kubectl apply -f - &> /dev/null
+
+            # Apply Quay.io credentials
+            echo "  • Applying Quay.io credentials..."
+            envsubst < kargo/quay-credentials.yaml | kubectl apply -f - &> /dev/null
+
+            echo -e "  ${GREEN}✅${NC} Kargo secrets applied"
+        fi
     fi
 else
     echo -e "  ${YELLOW}⚠️  No .env file found${NC}"
@@ -236,7 +274,7 @@ else
     echo "     1. cd kargo"
     echo "     2. cp .env.example .env"
     echo "     3. Edit .env with your GitHub and Quay.io credentials"
-    echo "     4. ./apply-secrets.sh"
+    echo "     4. Run: ./kargo/apply-secrets.sh (or re-run ./install.sh)"
 fi
 echo ""
 

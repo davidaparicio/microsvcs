@@ -1,0 +1,40 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: yellow-development
+  namespace: microsvcs
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: yellow-dev
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: image
+        value: quay.io/davidaparicio/yellow
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: https://github.com/davidaparicio/microsvcs.git
+          checkout:
+          - branch: main
+            path: ./repo
+      - uses: kustomize-set-image
+        config:
+          path: ./repo/k8s/overlays/development/yellow
+          images:
+          # 'image' must match the 'name' field in kustomization.yaml (quay.io/davidaparicio/app)
+          # 'newName' preserves the overlay's newName (quay.io/davidaparicio/yellow)
+          - image: quay.io/davidaparicio/app
+            newName: quay.io/davidaparicio/yellow
+            tag: ${{ imageFrom(vars.image).Tag }}
+      - uses: git-commit
+        config:
+          path: ./repo
+          message: '[dev] yellow use ${{ imageFrom(vars.image).Tag }}'
+      - uses: git-push
+        config:
+          path: ./repo

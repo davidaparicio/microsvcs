@@ -1,0 +1,12 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: yellow-releases
+  namespace: microsvcs
+spec:
+  subscriptions:
+  - image:
+      repoURL: quay.io/davidaparicio/yellow
+      imageSelectionStrategy: SemVer
+      semverConstraint: ">=0.0.0"
+      discoveryLimit: 10
