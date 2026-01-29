@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app
+  labels:
+    app.kubernetes.io/name: git-sync
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: git-sync.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /git-sync(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: app
+                port:
+                  number: 80

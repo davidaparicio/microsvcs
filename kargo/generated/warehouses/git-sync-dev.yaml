@@ -1,0 +1,12 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: git-sync-dev
+  namespace: microsvcs
+spec:
+  subscriptions:
+  - image:
+      repoURL: quay.io/davidaparicio/git-sync
+      imageSelectionStrategy: NewestBuild
+      allowTags: "^sha-.*"
+      discoveryLimit: 10

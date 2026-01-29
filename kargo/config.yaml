@@ -14,6 +14,7 @@ services:
   - blue
   - green
   - yellow
+  - git-sync
 
 environments:
   - name: development
