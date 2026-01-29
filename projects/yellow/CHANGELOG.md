@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/davidaparicio/microsvcs/compare/yellow/3.1.0...yellow/3.2.0) (2026-01-29)
+
+
+### Features
+
+* **color:** basic nominal distribution ([#56](https://github.com/davidaparicio/microsvcs/issues/56)) ([994fc51](https://github.com/davidaparicio/microsvcs/commit/994fc51c45c6b2c5837f314759346cdff2ae4aa6))
+
 ## [3.1.0](https://github.com/davidaparicio/microsvcs/compare/yellow/3.0.0...yellow/3.1.0) (2026-01-29)
 
 
