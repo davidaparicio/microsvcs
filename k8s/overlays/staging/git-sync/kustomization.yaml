@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: git-sync-staging
+resources:
+- ../../../base/git-sync-deployment.yaml
+- ../../../base/git-sync-service.yaml
+- ../../../base/git-sync-ingress.yaml
+namePrefix: git-sync-
+commonLabels:
+  app.kubernetes.io/name: git-sync
+  app.kubernetes.io/instance: git-sync-staging
+  environment: staging
+images:
+- name: quay.io/davidaparicio/app
+  newName: quay.io/davidaparicio/git-sync
+  newTag: latest
+replicas:
+- name: app
+  count: 1
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/rules/0/host
+      value: "git-sync.stg.127.0.0.1.nip.io"
+  target:
+    kind: Ingress

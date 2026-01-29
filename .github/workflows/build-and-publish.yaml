@@ -26,6 +26,8 @@ jobs:
       green--version: ${{ steps.release.outputs['projects/green--version'] }}
       yellow--release_created: ${{ steps.release.outputs['projects/yellow--release_created'] }}
       yellow--version: ${{ steps.release.outputs['projects/yellow--version'] }}
+      git-sync--release_created: ${{ steps.release.outputs['projects/git-sync--release_created'] }}
+      git-sync--version: ${{ steps.release.outputs['projects/git-sync--version'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -51,7 +53,7 @@ jobs:
           HEAD_SHA=${{ github.sha }}
 
           PROJECTS=()
-          for project in red blue green yellow; do
+          for project in red blue green yellow git-sync; do
             if git diff --name-only $BASE_SHA $HEAD_SHA | grep -q "projects/$project/"; then
               PROJECTS+=("\"$project\"")
             fi

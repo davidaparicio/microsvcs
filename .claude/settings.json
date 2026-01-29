@@ -6,7 +6,16 @@
       "Bash(kubectl explain:*)",
       "Bash(kubectl get:*)",
       "Bash(kubectl logs:*)",
-      "Bash(kargo get:*)"
+      "Bash(kargo get:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(go test:*)",
+      "Bash(make test:*)",
+      "Bash(make compile:*)",
+      "Bash(go build:*)",
+      "Bash(go run:*)",
+      "Bash(make run:*)",
+      "Bash(docker build:*)",
+      "Bash(docker run:*)"
     ]
   }
 }

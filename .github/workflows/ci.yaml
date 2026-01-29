@@ -33,7 +33,7 @@ jobs:
           fi
 
           PROJECTS=()
-          for project in red blue green yellow; do
+          for project in red blue green yellow git-sync; do
             if git diff --name-only $BASE_SHA $HEAD_SHA | grep -q "projects/$project/"; then
               PROJECTS+=("\"$project\"")
             fi
