@@ -39,3 +39,10 @@ spec:
       - uses: git-push
         config:
           path: ./repo
+      # Kargo makes an API call to ArgoCD to trigger an immediate sync operation
+      # thanks to => annotations: kargo.akuity.io/authorized-stage: 'microsvcs:{{.project}}-{{.env}}'
+      # This annotation grants the Kargo Stage permission to mutate the ArgoCD Application
+      - uses: argocd-update
+        config:
+          apps:
+          - name: ${SVC}-production

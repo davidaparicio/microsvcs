@@ -39,3 +39,7 @@ spec:
       - uses: git-push
         config:
           path: ./repo
+      - uses: argocd-update
+        config:
+          apps:
+          - name: git-sync-production
