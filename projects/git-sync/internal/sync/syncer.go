@@ -147,14 +147,14 @@ func (s *Syncer) GetStatus() map[string]any {
 	defer s.mu.RUnlock()
 
 	return map[string]any{
-		"healthy":     s.healthy,
-		"lastSync":    s.lastSync,
-		"lastCommit":  s.lastCommit,
-		"syncCount":   s.syncCount,
-		"errorCount":  s.errorCount,
-		"repoURL":     s.cfg.RepoURL,
-		"branch":      s.cfg.Branch,
-		"targetPath":  s.cfg.TargetPath,
+		"healthy":    s.healthy,
+		"lastSync":   s.lastSync,
+		"lastCommit": s.lastCommit,
+		"syncCount":  s.syncCount,
+		"errorCount": s.errorCount,
+		"repoURL":    s.cfg.RepoURL,
+		"branch":     s.cfg.Branch,
+		"targetPath": s.cfg.TargetPath,
 	}
 }
 

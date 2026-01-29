@@ -17,8 +17,8 @@ import (
 // FeatureFlagConfig represents the structure of demo-flags.goff.yaml
 type FeatureFlagConfig struct {
 	ColorBox struct {
-		Variations map[string]string `yaml:"variations"`
-		Targeting  []interface{}     `yaml:"targeting"`
+		Variations  map[string]string `yaml:"variations"`
+		Targeting   []interface{}     `yaml:"targeting"`
 		DefaultRule struct {
 			Percentage map[string]int `yaml:"percentage"`
 		} `yaml:"defaultRule"`
