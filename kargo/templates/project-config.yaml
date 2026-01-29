@@ -1,0 +1,16 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: ${PROJECT}
+  namespace: ${PROJECT}
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: "glob:*-development"
+    autoPromotionEnabled: ${DEV_AUTO_PROMOTE}
+  - stageSelector:
+      name: "glob:*-staging"
+    autoPromotionEnabled: ${STG_AUTO_PROMOTE}
+  - stageSelector:
+      name: "glob:*-production"
+    autoPromotionEnabled: ${PRD_AUTO_PROMOTE}

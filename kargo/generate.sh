@@ -28,6 +28,10 @@ export REL_SEMVER=$(yq -r '.environments[] | select(.name == "staging") | .wareh
 export REL_STRATEGY=$(yq -r '.environments[] | select(.name == "staging") | .warehouse.imageSelectionStrategy' "$CONFIG")
 export REL_LIMIT=$(yq -r '.environments[] | select(.name == "staging") | .warehouse.discoveryLimit' "$CONFIG")
 
+export DEV_AUTO_PROMOTE=$(yq -r '.environments[] | select(.name == "development") | .autoPromote' "$CONFIG")
+export STG_AUTO_PROMOTE=$(yq -r '.environments[] | select(.name == "staging") | .autoPromote' "$CONFIG")
+export PRD_AUTO_PROMOTE=$(yq -r '.environments[] | select(.name == "production") | .autoPromote' "$CONFIG")
+
 mapfile -t SERVICES < <(yq -r '.services[]' "$CONFIG")
 
 echo "Generating Kargo manifests for: ${SERVICES[*]}"
@@ -36,7 +40,7 @@ rm -rf "$OUT"
 mkdir -p "$OUT"/{warehouses,stages}
 
 # Render a template file, substituting only our variables (leaves ${{ ... }} Kargo expressions alone)
-VARS='${PROJECT} ${NAMESPACE} ${GIT_REPO} ${GIT_BRANCH} ${REGISTRY} ${KUSTOMIZE_BASE} ${SVC} ${DEV_PATTERN} ${DEV_STRATEGY} ${DEV_LIMIT} ${REL_SEMVER} ${REL_STRATEGY} ${REL_LIMIT}'
+VARS='${PROJECT} ${NAMESPACE} ${GIT_REPO} ${GIT_BRANCH} ${REGISTRY} ${KUSTOMIZE_BASE} ${SVC} ${DEV_PATTERN} ${DEV_STRATEGY} ${DEV_LIMIT} ${REL_SEMVER} ${REL_STRATEGY} ${REL_LIMIT} ${DEV_AUTO_PROMOTE} ${STG_AUTO_PROMOTE} ${PRD_AUTO_PROMOTE}'
 
 render() {
   envsubst "$VARS" < "$1" > "$2"
@@ -44,6 +48,7 @@ render() {
 
 # Project
 render "$TEMPLATES/project.yaml" "$OUT/project.yaml"
+render "$TEMPLATES/project-config.yaml" "$OUT/project-config.yaml"
 
 # Per-service resources
 for SVC in "${SERVICES[@]}"; do
@@ -57,12 +62,13 @@ done
 
 WAREHOUSES=$(find "$OUT/warehouses" -name '*.yaml' | wc -l | tr -d ' ')
 STAGES=$(find "$OUT/stages" -name '*.yaml' | wc -l | tr -d ' ')
-echo "Generated: 1 project, ${WAREHOUSES} warehouses, ${STAGES} stages → ${OUT}/"
+echo "Generated: 1 project, 1 project-config, ${WAREHOUSES} warehouses, ${STAGES} stages → ${OUT}/"
 
 # Optional: apply directly
 if [[ "${1:-}" == "--apply" ]]; then
   command -v kubectl &>/dev/null || { echo "Error: kubectl is required"; exit 1; }
   kubectl apply -f "$OUT/project.yaml"
+  kubectl apply -f "$OUT/project-config.yaml"
   kubectl apply -f "$OUT/warehouses/"
   kubectl apply -f "$OUT/stages/"
   echo "Applied to cluster."
