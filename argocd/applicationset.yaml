@@ -18,8 +18,11 @@ spec:
           - list:
               elements:
                 - env: development
+                  autoSync: "true"
                 - env: staging
+                  autoSync: "true"
                 - env: production
+                  autoSync: "false"
   template:
     metadata:
       name: '{{.project}}-{{.env}}'
@@ -41,9 +44,11 @@ spec:
         server: https://kubernetes.default.svc
         namespace: '{{.project}}-{{.env}}'
       syncPolicy:
+        {{- if eq .autoSync "true" }}
         automated:
           prune: true
           selfHeal: true
+        {{- end }}
         syncOptions:
           - CreateNamespace=true
           - PruneLast=true
