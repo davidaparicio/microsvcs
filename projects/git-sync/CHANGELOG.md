@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/davidaparicio/microsvcs/compare/git-sync/0.2.2...git-sync/0.2.3) (2026-01-29)
+
+
+### Bug Fixes
+
+* **git-sync:** make quay.io image ([#97](https://github.com/davidaparicio/microsvcs/issues/97)) ([1b20cfe](https://github.com/davidaparicio/microsvcs/commit/1b20cfed3608b48186ffb15b42778025e8bc0d78))
+
 ## [0.2.2](https://github.com/davidaparicio/microsvcs/compare/git-sync/0.2.1...git-sync/0.2.2) (2026-01-29)
 
 
