@@ -17,6 +17,12 @@ type Client struct {
 }
 
 func NewClient(cfg *config.Config) (*Client, error) {
+	// Ensure temp directory exists (required for scratch-based containers)
+	tmpDir := os.TempDir()
+	if err := os.MkdirAll(tmpDir, 0o700); err != nil {
+		return nil, fmt.Errorf("failed to create temp directory: %w", err)
+	}
+
 	// Create temporary work directory with unique name
 	workDir, err := os.MkdirTemp("", "git-sync-work-*")
 	if err != nil {
