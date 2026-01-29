@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.3.0](https://github.com/davidaparicio/microsvcs/compare/yellow/3.2.0...yellow/3.3.0) (2026-01-29)
+
+
+### Features
+
+* add test coverage reporting to CI and Makefiles ([#68](https://github.com/davidaparicio/microsvcs/issues/68)) ([cb4c7dd](https://github.com/davidaparicio/microsvcs/commit/cb4c7dd2007a4cc346e88356f44dbb90278cf825))
+
+
+### Bug Fixes
+
+* handle feature flag initialization and evaluation errors ([#85](https://github.com/davidaparicio/microsvcs/issues/85)) ([86a5d27](https://github.com/davidaparicio/microsvcs/commit/86a5d271a3731624eaeb735832008e7a63bc17a2))
+
 ## [3.2.0](https://github.com/davidaparicio/microsvcs/compare/yellow/3.1.0...yellow/3.2.0) (2026-01-29)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.3.0](https://github.com/davidaparicio/microsvcs/compare/red/3.2.0...red/3.3.0) (2026-01-29)
+
+
+### Features
+
+* add test coverage reporting to CI and Makefiles ([#68](https://github.com/davidaparicio/microsvcs/issues/68)) ([cb4c7dd](https://github.com/davidaparicio/microsvcs/commit/cb4c7dd2007a4cc346e88356f44dbb90278cf825))
+* **red:** use git-sync ff sidecar ([#62](https://github.com/davidaparicio/microsvcs/issues/62)) ([7bc03d0](https://github.com/davidaparicio/microsvcs/commit/7bc03d0f75d257a2a349aa4b2a7ba83b886aa3f5))
+
+
+### Bug Fixes
+
+* handle feature flag initialization and evaluation errors ([#85](https://github.com/davidaparicio/microsvcs/issues/85)) ([86a5d27](https://github.com/davidaparicio/microsvcs/commit/86a5d271a3731624eaeb735832008e7a63bc17a2))
+
 ## [3.2.0](https://github.com/davidaparicio/microsvcs/compare/red/3.1.0...red/3.2.0) (2026-01-29)
 
 
