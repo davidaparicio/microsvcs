@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -49,13 +50,15 @@ func main() {
 	configFile := flag.String("configFile", "/app/config/demo-flags.goff.yaml", "path to feature flags file")
 	flag.Parse()
 
-	_ = ffclient.Init(ffclient.Config{
+	if err := ffclient.Init(ffclient.Config{
 		PollingInterval: 1 * time.Second,
 		Context:         context.Background(),
 		Retriever: &fileretriever.Retriever{
 			Path: *configFile,
 		},
-	})
+	}); err != nil {
+		log.Fatalf("Failed to initialize feature flag client: %v", err)
+	}
 
 	e := echo.New()
 	e.HideBanner = true
@@ -114,7 +117,10 @@ func apiHandler(c echo.Context) error {
 	// Get user color variations
 	mapToRender := make(map[string]string, 2500)
 	for k, user := range users {
-		color, _ := ffclient.StringVariation("color-box", user, "grey")
+		color, err := ffclient.StringVariation("color-box", user, "grey")
+		if err != nil {
+			log.Printf("Feature flag evaluation error for %s: %v", k, err)
+		}
 		mapToRender[k] = color
 	}
 
