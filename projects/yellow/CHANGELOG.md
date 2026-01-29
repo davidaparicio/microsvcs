@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/davidaparicio/microsvcs/compare/yellow/3.0.0...yellow/3.1.0) (2026-01-29)
+
+
+### Features
+
+* **color:** 90-10 rule ([#52](https://github.com/davidaparicio/microsvcs/issues/52)) ([5d41f5a](https://github.com/davidaparicio/microsvcs/commit/5d41f5acf5b92c07f07d702e86861bec52d491f4))
+
 ## [3.0.0](https://github.com/davidaparicio/microsvcs/compare/yellow/2.6.1...yellow/3.0.0) (2026-01-28)
 
 
