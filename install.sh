@@ -301,7 +301,7 @@ if [ "$SKIP_WAIT" = false ]; then
             elapsed=0
             sync_status=""
             health_status=""
-            while [ "$elapsed" -lt "$timeout" ]; do
+            while [[ "$elapsed" -lt "$timeout" ]]; do
                 sync_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.sync.status}' 2>/dev/null)
                 health_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.health.status}' 2>/dev/null)
                 if [[ "$sync_status" == "Synced" ]] && [[ "$health_status" == "Healthy" ]]; then
