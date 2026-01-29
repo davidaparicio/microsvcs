@@ -101,7 +101,7 @@ jobs:
           RELEASE_CREATED="${{ needs.release-please.outputs[format('{0}--release_created', matrix.project)] }}"
           VERSION="${{ needs.release-please.outputs[format('{0}--version', matrix.project)] }}"
 
-          if [ "$RELEASE_CREATED" == "true" ]; then
+          if [ "$RELEASE_CREATED" == "true" ] && [ -n "$VERSION" ]; then
             echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "is_release=true" >> $GITHUB_OUTPUT
             echo "build_version=$VERSION" >> $GITHUB_OUTPUT
