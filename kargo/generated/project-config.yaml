@@ -1,0 +1,16 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: microsvcs
+  namespace: microsvcs
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: "glob:*-development"
+    autoPromotionEnabled: true
+  - stageSelector:
+      name: "glob:*-staging"
+    autoPromotionEnabled: true
+  - stageSelector:
+      name: "glob:*-production"
+    autoPromotionEnabled: false

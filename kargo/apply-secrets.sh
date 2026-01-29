@@ -2,6 +2,14 @@
 set -euo pipefail
 
 # Script to apply Kargo secrets using environment variables from .env file
+#
+# NOTE: This logic is also integrated into install.sh for automatic setup.
+# This standalone script is useful for:
+# - Updating credentials after initial installation
+# - Manual credential application if install.sh had issues
+# - Re-applying secrets without full reinstall
+#
+# References:
 # https://blog.stephane-robert.info/docs/outils/projets/envsubst/
 # https://blog.filador.ch/en/posts/kargo-deploy-from-one-environment-to-another-with-gitops/
 # https://docs.kargo.io/user-guide/security/managing-credentials/

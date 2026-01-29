@@ -1,8 +1,32 @@
 # Kargo Deployment Guide
 
-Kargo manages promotions across environments for the microservices (red, blue, green, yellow).
+Kargo manages automated promotions across environments for the microservices (red, blue, green, yellow).
 
-## Quick tutorial video
+**GitOps-based progressive deployment** with:
+- ✅ Automated development & staging promotions
+- ✅ Manual production promotions
+- ✅ Full audit trail via git commits
+- ✅ Template-driven configuration for easy service additions
+
+## Quick Start
+
+```bash
+# 1. Install the platform (Kind cluster + ArgoCD + Kargo)
+./install.sh
+
+# 2. Access the dashboards
+# ArgoCD: http://localhost:31443 (admin/admin)
+# Kargo:  http://localhost:31444 (admin/admin)
+
+# 3. Trigger a deployment
+git commit -m "feat(red): new feature" && git push
+# Development auto-promotes → Staging auto-promotes → Production manual
+
+# 4. Promote to production
+kargo promote --project microsvcs --stage red-production
+```
+
+## Tutorial Videos
 
 GitOps-driven workflow powered by Kargo
 * [Kargo Tutorial: Manage Multi-Environment Deployments with Argo CD (9min)](https://youtu.be/NHXBV40GFHs)
@@ -88,6 +112,8 @@ This renders the templates for all services (red, blue, green, yellow) and produ
 
 ### 3. Configure Credentials
 
+**Note**: If you used `./install.sh` for installation, credentials are automatically applied if `kargo/.env` exists. This section is for manual credential management or updates.
+
 #### Using Environment Variables (Recommended)
 
 1. Create a `.env` file from the example:
@@ -99,12 +125,16 @@ This renders the templates for all services (red, blue, green, yellow) and produ
    ```bash
    GITHUB_USERNAME=davidaparicio
    GITHUB_PAT=ghp_your_github_pat_here
-   DOCKERHUB_USERNAME=davidaparicio
-   DOCKERHUB_PAT=dckr_pat_your_dockerhub_pat_here
+   QUAY_USERNAME=davidaparicio
+   QUAY_PAT=your_quay_pat_here
    ```
 
-3. Apply secrets using the script:
+3. Apply secrets:
    ```bash
+   # Option 1: Automatically applied by install.sh if .env exists
+   ./install.sh
+
+   # Option 2: Apply manually (useful for updating credentials)
    ./kargo/apply-secrets.sh
    ```
 
@@ -258,9 +288,9 @@ kargo/
 │   ├── stage-development.yaml   # Dev stage template
 │   ├── stage-staging.yaml       # Staging stage template
 │   └── stage-production.yaml    # Production stage template
-└── generated/                   # Output from generate.sh (not committed)
-    ├── project.yaml
-    ├── project-config.yaml
+└── generated/                   # Output from generate.sh (NOW COMMITTED to git for transparency!)
+    ├── project.yaml             # The actual resources deployed to cluster
+    ├── project-config.yaml      # These are visible in PRs for review
     ├── warehouses/
     │   ├── {svc}-dev.yaml       # Watches quay.io/davidaparicio/{svc} (SHA tags)
     │   └── {svc}-releases.yaml  # Watches quay.io/davidaparicio/{svc} (semver)
@@ -269,6 +299,50 @@ kargo/
         ├── {svc}-staging.yaml
         └── {svc}-production.yaml
 ```
+
+## How the Template System Works
+
+The Kargo configuration uses a **template-driven approach** to avoid repetition:
+
+1. **Single Source of Truth**: `kargo/config.yaml` defines all services and environments
+2. **Templates**: `kargo/templates/*.yaml` contain parameterized Kargo resources
+3. **Generation**: `kargo/generate.sh` renders templates into actual manifests
+4. **Version Controlled**: Generated manifests are committed to git for transparency
+
+### Adding a New Service
+
+To add a new service (e.g., "orange"):
+
+1. Edit `kargo/config.yaml`:
+   ```yaml
+   services:
+     - red
+     - blue
+     - green
+     - yellow
+     - orange  # add here
+   ```
+
+2. Regenerate manifests:
+   ```bash
+   cd kargo && ./generate.sh
+   ```
+
+3. Review the generated files (now visible in git):
+   ```bash
+   git diff generated/
+   ```
+
+4. Apply to cluster:
+   ```bash
+   ./generate.sh --apply
+   ```
+
+This creates 5 resources for the new service:
+- 2 warehouses (orange-dev, orange-releases)
+- 3 stages (orange-development, orange-staging, orange-production)
+
+**Why templates?** Since services are added frequently (monthly+), templates automate the process and prevent errors from manual copy-paste.
 
 ## Warehouses
 

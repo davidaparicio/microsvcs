@@ -1,58 +1,53 @@
 # Kargo Configuration
 
-Trunk-based development promotion pipeline for microservices.
+> **📖 For complete documentation, see [KARGO.md](../KARGO.md) at the repository root.**
 
-## Promotion Flow
+This directory contains the Kargo configuration using a template-driven approach.
 
-```
-Commit (sha-*)  →  dev warehouse  →  development (auto)
-Release (v*.*)  →  releases warehouse  →  staging (auto)  →  production (manual)
-```
-
-All promotions commit to the `main` branch.
-
-| Environment | Promotion | Image Source | Trigger |
-|-------------|-----------|--------------|---------|
-| Development | Auto | `sha-*` tags | Every commit |
-| Staging | Auto | Semver tags | Release tag |
-| Production | Manual | From staging | `kargo promote` |
-
-## Usage
+## Quick Reference
 
 ```bash
-# Generate manifests
+# Generate manifests from templates
 ./generate.sh
 
 # Generate and apply to cluster
 ./generate.sh --apply
 
-# Manually promote to production
-kargo promote --stage red-production --freight <id> -n microsvcs
+# Apply credentials
+./apply-secrets.sh  # requires .env file
+
+# Promote to production (manual)
+kargo promote --project microsvcs --stage red-production
 ```
 
-## Adding a Service
+## Directory Structure
 
-Edit `config.yaml`:
+- **`config.yaml`** — Single source of truth (services, environments, image patterns)
+- **`generate.sh`** — Renders templates into `generated/` manifests
+- **`templates/`** — Parameterized Kargo resource templates
+- **`generated/`** — **Actual deployed resources** (committed to git for transparency)
+- **`apply-secrets.sh`** — Applies git and registry credentials
+- **`*-credentials.yaml`** — Credential templates (require .env file)
 
-```yaml
-services:
-  - red
-  - blue
-  - green
-  - yellow
-  - orange  # add here
-```
+## Important Notes
 
-Then run `./generate.sh --apply`.
+⚠️ **Do not edit `generated/` files directly** - they are auto-generated from templates.
 
-## Files
+To make changes:
+1. Edit `config.yaml` (for services/environments) OR `templates/` (for resource structure)
+2. Run `./generate.sh` to regenerate
+3. Review the diff: `git diff generated/`
+4. Apply if needed: `./generate.sh --apply`
 
-- `config.yaml` — single source of truth
-- `generate.sh` — generates manifests into `generated/` (gitignored)
-- `apply-secrets.sh` — applies registry and git credentials
-- `*-credentials.yaml` — credential templates
+✅ **Generated files are version controlled** for transparency in PRs and easier debugging.
 
 ## Prerequisites
 
-- [yq](https://github.com/mikefarah/yq) v4+
-- `kubectl` (for `--apply`)
+- [yq](https://github.com/mikefarah/yq) v4+ (for template rendering)
+- `envsubst` from gettext (for variable substitution)
+- `kubectl` (for applying to cluster)
+
+## See Also
+
+- [KARGO.md](../KARGO.md) - Complete deployment guide
+- [install.sh](../install.sh) - Full platform installation script

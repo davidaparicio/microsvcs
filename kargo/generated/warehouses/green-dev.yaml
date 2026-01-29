@@ -1,0 +1,12 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: green-dev
+  namespace: microsvcs
+spec:
+  subscriptions:
+  - image:
+      repoURL: quay.io/davidaparicio/green
+      imageSelectionStrategy: NewestBuild
+      allowTags: "^sha-.*"
+      discoveryLimit: 10

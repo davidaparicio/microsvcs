@@ -9,8 +9,8 @@ ztmp
 report.json
 # Kargo secrets
 kargo/.env
-# Kargo generated resources (regenerated from config.yaml)
-kargo/generated/
+# Kargo generated resources (now version controlled for transparency)
+# kargo/generated/  # Now committed to git for visibility in PRs and easier debugging
 kargo/generated.backup.*
 
 # Created by https://www.toptal.com/developers/gitignore/api/go,goland,visualstudiocode
