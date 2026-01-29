@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/davidaparicio/microsvcs/compare/git-sync/0.2.1...git-sync/0.2.2) (2026-01-29)
+
+
+### Bug Fixes
+
+* **git-sync:** where /tmp doesn't exist (like minimal containers) ([#94](https://github.com/davidaparicio/microsvcs/issues/94)) ([905d370](https://github.com/davidaparicio/microsvcs/commit/905d3700377a2d45bf5104888dfb601739024dfb))
+
 ## [0.2.1](https://github.com/davidaparicio/microsvcs/compare/git-sync/0.2.0...git-sync/0.2.1) (2026-01-29)
 
 
