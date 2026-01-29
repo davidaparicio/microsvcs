@@ -304,15 +304,15 @@ if [ "$SKIP_WAIT" = false ]; then
             while [ "$elapsed" -lt "$timeout" ]; do
                 sync_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.sync.status}' 2>/dev/null)
                 health_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.health.status}' 2>/dev/null)
-                if [ "$sync_status" = "Synced" ] && [ "$health_status" = "Healthy" ]; then
+                if [[ "$sync_status" == "Synced" ]] && [[ "$health_status" == "Healthy" ]]; then
                     break
                 fi
                 sleep 5
                 elapsed=$((elapsed + 5))
             done
-            if [ "$sync_status" = "Synced" ] && [ "$health_status" = "Healthy" ]; then
+            if [[ "$sync_status" == "Synced" ]] && [[ "$health_status" == "Healthy" ]]; then
                 echo -e "${GREEN}✅ synced & healthy${NC}"
-            elif [ "$sync_status" = "Synced" ]; then
+            elif [[ "$sync_status" == "Synced" ]]; then
                 echo -e "${YELLOW}⚠️  synced but ${health_status:-not healthy}${NC}"
             else
                 echo -e "${RED}❌ ${sync_status:-unknown} / ${health_status:-unknown}${NC}"
