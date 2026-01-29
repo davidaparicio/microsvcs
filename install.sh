@@ -242,37 +242,9 @@ echo ""
 
 # Trigger initial sync
 SERVICES=(red blue green yellow)
-ENVIRONMENTS=(development staging production)
+# ENVIRONMENTS=(development staging production)
 
-# Pre-create namespaces (ArgoCD CreateNamespace may race with manual sync trigger)
-echo -e "${BLUE}📂 Pre-creating namespaces...${NC}"
-for service in "${SERVICES[@]}"; do
-    for env in "${ENVIRONMENTS[@]}"; do
-        kubectl create namespace "${service}-${env}" &> /dev/null || true
-    done
-done
-echo -e "  ${GREEN}✅${NC} Namespaces ready"
-echo ""
-
-sleep 5  # Give ArgoCD a moment to register namespaces
-
-echo -e "${BLUE}🔄 Triggering initial ArgoCD sync...${NC}"
-for service in "${SERVICES[@]}"; do
-    for env in "${ENVIRONMENTS[@]}"; do
-        app="${service}-${env}"
-        echo -n "   • ${app}: "
-        if kubectl -n argocd patch "app/${app}" \
-            -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}' \
-            --type=merge &> /dev/null; then
-            echo -e "${GREEN}sync triggered${NC}"
-        else
-            echo -e "${YELLOW}skipped (may not exist yet)${NC}"
-        fi
-    done
-done
-echo ""
-
-sleep 5  # Give ArgoCD a moment to start syncing
+sleep 10  # Give ArgoCD a moment to register and auto-sync applications
 
 # Wait for applications
 # for service in red blue green yellow; do app="${service}-development"; echo -n "   • ${app}: "; sync_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.sync.status}' 2>/dev/null); health_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.health.status}' 2>/dev/null); echo "${sync_status} / ${health_status}"; done
