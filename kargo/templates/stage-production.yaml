@@ -11,6 +11,12 @@ spec:
     sources:
       stages:
       - ${SVC}-staging
+  verification:
+    analysisTemplates:
+    - name: ${SVC}-app-health-check
+    analysisRunMetadata:
+      labels:
+        stage: ${SVC}-production
   promotionTemplate:
     spec:
       vars:
