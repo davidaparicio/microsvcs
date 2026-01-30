@@ -20,12 +20,20 @@
 
 <section class="kpi-container">
     <div class="kpi-card">
-        <div class="kpi-label">Rollout Speed</div>
-        <div class="kpi-value">{{printf "%.1f" .KPI.TargetPercent}}%</div>
-        <div class="kpi-bar-track">
-            <div class="kpi-bar-fill {{.KPI.TargetColor}}" style="width: {{printf "%.1f" .KPI.TargetPercent}}%"></div>
-        </div>
-        <div class="kpi-detail">{{.KPI.TargetCount}} / {{.KPI.TotalCount}} users on <strong>{{.KPI.TargetColor}}</strong></div>
+        <div class="kpi-label">Server render</div>
+        <div class="kpi-value">{{printf "%.2f" .KPI.ServerRenderMs}} ms</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">TTFB</div>
+        <div class="kpi-value" id="kpi-ttfb">--</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">DOM Ready</div>
+        <div class="kpi-value" id="kpi-dom-ready">--</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">Page Load</div>
+        <div class="kpi-value" id="kpi-page-load">--</div>
     </div>
 </section>
 

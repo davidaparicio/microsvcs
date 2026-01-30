@@ -24,14 +24,9 @@ import (
 
 var users = make(map[string]ffcontext.EvaluationContext, 2500)
 
-// KPIData holds rollout speed metrics
+// KPIData holds rendering speed metrics
 type KPIData struct {
-	TargetColor    string
-	TargetCount    int
-	TotalCount     int
-	TargetPercent  float64
-	DefaultCount   int
-	DefaultPercent float64
+	ServerRenderMs float64
 }
 
 // PageData holds all data to be rendered in the template
@@ -125,6 +120,8 @@ func getCircle(color string) string {
 }
 
 func apiHandler(c echo.Context) error {
+	start := time.Now()
+
 	// Get user color variations
 	mapToRender := make(map[string]string, 2500)
 	for k, user := range users {
@@ -135,25 +132,9 @@ func apiHandler(c echo.Context) error {
 		mapToRender[k] = color
 	}
 
-	// Compute KPI metrics
-	targetColor := strings.SplitN(name.GetHostname(), "-", 2)[0]
-	targetCount := 0
-	greyCount := 0
-	for _, color := range mapToRender {
-		if color == targetColor {
-			targetCount++
-		} else if color == "grey" {
-			greyCount++
-		}
-	}
-	total := len(mapToRender)
+	serverRenderMs := float64(time.Since(start).Microseconds()) / 1000.0
 	kpi := KPIData{
-		TargetColor:    targetColor,
-		TargetCount:    targetCount,
-		TotalCount:     total,
-		TargetPercent:  float64(targetCount) / float64(total) * 100,
-		DefaultCount:   greyCount,
-		DefaultPercent: float64(greyCount) / float64(total) * 100,
+		ServerRenderMs: serverRenderMs,
 	}
 
 	// Get system information

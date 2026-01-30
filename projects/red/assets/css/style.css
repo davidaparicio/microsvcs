@@ -108,7 +108,9 @@ body::before {
 .kpi-container {
     display: flex;
     justify-content: center;
+    gap: 16px;
     padding: 20px 24px 0;
+    flex-wrap: wrap;
 }
 
 .kpi-card {
@@ -118,9 +120,9 @@ body::before {
     border-radius: var(--border-radius);
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-glass);
-    padding: 20px 32px;
+    padding: 16px 24px;
     text-align: center;
-    min-width: 280px;
+    min-width: 160px;
     animation: fadeIn 0.9s ease-out 0.1s backwards;
     transition: var(--transition);
 }
@@ -132,7 +134,7 @@ body::before {
 }
 
 .kpi-label {
-    font-size: 0.85em;
+    font-size: 0.75em;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     color: var(--text-secondary);
@@ -140,34 +142,15 @@ body::before {
 }
 
 .kpi-value {
-    font-size: 2.4em;
+    font-size: 1.6em;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.2;
 }
 
-.kpi-bar-track {
-    height: 8px;
-    background: rgba(156, 163, 175, 0.3);
-    border-radius: 4px;
-    margin: 12px 0;
-    overflow: hidden;
-}
-
-.kpi-bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.kpi-detail {
-    font-size: 0.9em;
-    color: var(--text-secondary);
-}
-
-.kpi-detail strong {
-    color: var(--text-primary);
-}
+.kpi-good { color: #059669; }
+.kpi-ok   { color: #d97706; }
+.kpi-bad  { color: #dc2626; }
 
 /* Grid Container */
 .grid-container {
