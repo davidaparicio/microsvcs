@@ -1,7 +1,7 @@
 {
-  "projects/red": "3.3.0",
-  "projects/blue": "3.3.0",
-  "projects/green": "3.3.0",
-  "projects/yellow": "3.3.0",
+  "projects/red": "3.4.0",
+  "projects/blue": "3.3.1",
+  "projects/green": "3.3.1",
+  "projects/yellow": "3.3.1",
   "projects/git-sync": "0.2.3"
 }

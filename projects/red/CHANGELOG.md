@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.4.0](https://github.com/davidaparicio/microsvcs/compare/red/3.3.0...red/3.4.0) (2026-01-30)
+
+
+### Features
+
+* **red:** add rendering speed KPI to web interface and /metrics endpoint ([#101](https://github.com/davidaparicio/microsvcs/issues/101)) ([a73fd57](https://github.com/davidaparicio/microsvcs/commit/a73fd57bd7d9b645c630ffc8687f2a39c591d3b6))
+
+
+### Bug Fixes
+
+* **color:** make quay.io image ([#99](https://github.com/davidaparicio/microsvcs/issues/99)) ([2cce2c2](https://github.com/davidaparicio/microsvcs/commit/2cce2c2eb6062a2f3e5c30483640bb8c7987178e))
+
 ## [3.3.0](https://github.com/davidaparicio/microsvcs/compare/red/3.2.0...red/3.3.0) (2026-01-29)
 
 
