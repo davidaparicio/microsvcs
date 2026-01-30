@@ -24,10 +24,21 @@ import (
 
 var users = make(map[string]ffcontext.EvaluationContext, 2500)
 
+// KPIData holds rollout speed metrics
+type KPIData struct {
+	TargetColor    string
+	TargetCount    int
+	TotalCount     int
+	TargetPercent  float64
+	DefaultCount   int
+	DefaultPercent float64
+}
+
 // PageData holds all data to be rendered in the template
 type PageData struct {
 	Users      map[string]string
 	SystemInfo SystemInfo
+	KPI        KPIData
 }
 
 // SystemInfo holds system and request information
@@ -124,6 +135,27 @@ func apiHandler(c echo.Context) error {
 		mapToRender[k] = color
 	}
 
+	// Compute KPI metrics
+	targetColor := strings.SplitN(name.GetHostname(), "-", 2)[0]
+	targetCount := 0
+	greyCount := 0
+	for _, color := range mapToRender {
+		if color == targetColor {
+			targetCount++
+		} else if color == "grey" {
+			greyCount++
+		}
+	}
+	total := len(mapToRender)
+	kpi := KPIData{
+		TargetColor:    targetColor,
+		TargetCount:    targetCount,
+		TotalCount:     total,
+		TargetPercent:  float64(targetCount) / float64(total) * 100,
+		DefaultCount:   greyCount,
+		DefaultPercent: float64(greyCount) / float64(total) * 100,
+	}
+
 	// Get system information
 	hostname := name.GetHostname()
 	namespace := name.GetNamespace()
@@ -152,6 +184,7 @@ func apiHandler(c echo.Context) error {
 	pageData := PageData{
 		Users:      mapToRender,
 		SystemInfo: sysInfo,
+		KPI:        kpi,
 	}
 
 	return c.Render(http.StatusOK, "template.html", pageData)

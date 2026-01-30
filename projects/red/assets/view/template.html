@@ -18,6 +18,17 @@
     </div>
 </header>
 
+<section class="kpi-container">
+    <div class="kpi-card">
+        <div class="kpi-label">Rollout Speed</div>
+        <div class="kpi-value">{{printf "%.1f" .KPI.TargetPercent}}%</div>
+        <div class="kpi-bar-track">
+            <div class="kpi-bar-fill {{.KPI.TargetColor}}" style="width: {{printf "%.1f" .KPI.TargetPercent}}%"></div>
+        </div>
+        <div class="kpi-detail">{{.KPI.TargetCount}} / {{.KPI.TotalCount}} users on <strong>{{.KPI.TargetColor}}</strong></div>
+    </div>
+</section>
+
 <main class="grid-container">
 <table class="color-grid">
     <tr>
