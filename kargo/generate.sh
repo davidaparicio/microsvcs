@@ -32,12 +32,16 @@ export DEV_AUTO_PROMOTE=$(yq -r '.environments[] | select(.name == "development"
 export STG_AUTO_PROMOTE=$(yq -r '.environments[] | select(.name == "staging") | .autoPromote' "$CONFIG")
 export PRD_AUTO_PROMOTE=$(yq -r '.environments[] | select(.name == "production") | .autoPromote' "$CONFIG")
 
-mapfile -t SERVICES < <(yq -r '.services[]' "$CONFIG")
+# The read -r -d '' -a approach works on Bash 3.2 (macOS default). 
+# Alternatively, you could change the shebang to #!/usr/bin/env bash
+# & install Bash 4+ via brew install bash, but the portable fix is simpler.
+# mapfile -t SERVICES < <(yq -r '.services[]' "$CONFIG")
+IFS=$'\n' read -r -d '' -a SERVICES < <(yq -r '.services[]' "$CONFIG" && printf '\0')
 
 echo "Generating Kargo manifests for: ${SERVICES[*]}"
 
 rm -rf "$OUT"
-mkdir -p "$OUT"/{warehouses,stages}
+mkdir -p "$OUT"/{warehouses,stages,analysis}
 
 # Render a template file, substituting only our variables (leaves ${{ ... }} Kargo expressions alone)
 VARS='${PROJECT} ${NAMESPACE} ${GIT_REPO} ${GIT_BRANCH} ${REGISTRY} ${KUSTOMIZE_BASE} ${SVC} ${DEV_PATTERN} ${DEV_STRATEGY} ${DEV_LIMIT} ${REL_SEMVER} ${REL_STRATEGY} ${REL_LIMIT} ${DEV_AUTO_PROMOTE} ${STG_AUTO_PROMOTE} ${PRD_AUTO_PROMOTE}'
@@ -49,6 +53,9 @@ render() {
 # Project
 render "$TEMPLATES/project.yaml" "$OUT/project.yaml"
 render "$TEMPLATES/project-config.yaml" "$OUT/project-config.yaml"
+
+# Shared resources
+render "$TEMPLATES/analysis-http-check.yaml" "$OUT/analysis/http-check.yaml"
 
 # Per-service resources
 for SVC in "${SERVICES[@]}"; do
@@ -62,7 +69,8 @@ done
 
 WAREHOUSES=$(find "$OUT/warehouses" -name '*.yaml' | wc -l | tr -d ' ')
 STAGES=$(find "$OUT/stages" -name '*.yaml' | wc -l | tr -d ' ')
-echo "Generated: 1 project, 1 project-config, ${WAREHOUSES} warehouses, ${STAGES} stages → ${OUT}/"
+ANALYSIS=$(find "$OUT/analysis" -name '*.yaml' | wc -l | tr -d ' ')
+echo "Generated: 1 project, 1 project-config, ${WAREHOUSES} warehouses, ${STAGES} stages, ${ANALYSIS} analysis templates → ${OUT}/"
 
 # Optional: apply directly
 if [[ "${1:-}" == "--apply" ]]; then
@@ -70,6 +78,7 @@ if [[ "${1:-}" == "--apply" ]]; then
   kubectl apply -f "$OUT/project.yaml"
   kubectl apply -f "$OUT/project-config.yaml"
   kubectl apply -f "$OUT/warehouses/"
+  kubectl apply -f "$OUT/analysis/"
   kubectl apply -f "$OUT/stages/"
   echo "Applied to cluster."
 fi

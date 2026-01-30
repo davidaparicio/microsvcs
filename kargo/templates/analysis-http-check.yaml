@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: http-check
+  namespace: ${NAMESPACE}
+spec:
+  args:
+  - name: service-name
+  metrics:
+  - name: app-health
+    count: 1
+    initialDelay: 30s
+    provider:
+      job:
+        spec:
+          backoffLimit: 0
+          template:
+            spec:
+              restartPolicy: Never
+              containers:
+              - name: curl
+                image: curlimages/curl:latest
+                command: [curl, -sf, "http://{{args.service-name}}-app.${NAMESPACE}.svc:8080/health"]

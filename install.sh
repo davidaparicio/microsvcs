@@ -390,3 +390,15 @@ echo "  • List apps: kubectl get apps -n argocd"
 echo "  • View logs: kubectl logs -n argocd -l app.kubernetes.io/name=argocd-server"
 echo "  • Delete cluster: kind delete cluster --name ${CLUSTER_NAME}"
 echo ""
+
+# brew install argocd kargo gettext # (macOS)
+# argocd login localhost:31443 --insecure --username admin --password admin
+# kargo login https://localhost:31444 --admin --insecure-skip-tls-verify
+
+# argocd app list
+# 
+# kargo get projects
+# kargo get freight -p microsvcs
+# kargo get stages -p microsvcs
+# kargo get promotions -p microsvcs 
+# kargo get promotions -p microsvcs red-staging.01kg70zac6fbw6z2hnp6dxcqg3.d1513d7
