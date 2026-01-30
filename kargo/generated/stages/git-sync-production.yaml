@@ -11,6 +11,12 @@ spec:
     sources:
       stages:
       - git-sync-staging
+  verification:
+    analysisTemplates:
+    - name: git-sync-app-health-check
+    analysisRunMetadata:
+      labels:
+        stage: git-sync-production
   promotionTemplate:
     spec:
       vars:

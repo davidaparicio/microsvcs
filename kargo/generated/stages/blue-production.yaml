@@ -11,6 +11,12 @@ spec:
     sources:
       stages:
       - blue-staging
+  verification:
+    analysisTemplates:
+    - name: blue-app-health-check
+    analysisRunMetadata:
+      labels:
+        stage: blue-production
   promotionTemplate:
     spec:
       vars:

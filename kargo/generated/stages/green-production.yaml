@@ -11,6 +11,12 @@ spec:
     sources:
       stages:
       - green-staging
+  verification:
+    analysisTemplates:
+    - name: green-app-health-check
+    analysisRunMetadata:
+      labels:
+        stage: green-production
   promotionTemplate:
     spec:
       vars:

@@ -10,6 +10,12 @@ spec:
       name: green-releases
     sources:
       direct: true
+  verification:
+    analysisTemplates:
+    - name: green-app-health-check
+    analysisRunMetadata:
+      labels:
+        stage: green-staging
   promotionTemplate:
     spec:
       vars:

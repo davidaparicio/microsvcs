@@ -10,6 +10,12 @@ spec:
       name: git-sync-releases
     sources:
       direct: true
+  verification:
+    analysisTemplates:
+    - name: git-sync-app-health-check
+    analysisRunMetadata:
+      labels:
+        stage: git-sync-staging
   promotionTemplate:
     spec:
       vars:

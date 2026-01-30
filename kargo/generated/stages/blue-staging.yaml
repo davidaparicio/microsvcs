@@ -10,6 +10,12 @@ spec:
       name: blue-releases
     sources:
       direct: true
+  verification:
+    analysisTemplates:
+    - name: blue-app-health-check
+    analysisRunMetadata:
+      labels:
+        stage: blue-staging
   promotionTemplate:
     spec:
       vars:

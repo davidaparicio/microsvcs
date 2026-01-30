@@ -11,6 +11,12 @@ spec:
     sources:
       stages:
       - red-staging
+  verification:
+    analysisTemplates:
+    - name: red-app-health-check
+    analysisRunMetadata:
+      labels:
+        stage: red-production
   promotionTemplate:
     spec:
       vars:

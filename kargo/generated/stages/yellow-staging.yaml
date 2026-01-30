@@ -10,6 +10,12 @@ spec:
       name: yellow-releases
     sources:
       direct: true
+  verification:
+    analysisTemplates:
+    - name: yellow-app-health-check
+    analysisRunMetadata:
+      labels:
+        stage: yellow-staging
   promotionTemplate:
     spec:
       vars:

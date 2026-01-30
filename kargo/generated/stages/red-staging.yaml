@@ -10,6 +10,12 @@ spec:
       name: red-releases
     sources:
       direct: true
+  verification:
+    analysisTemplates:
+    - name: red-app-health-check
+    analysisRunMetadata:
+      labels:
+        stage: red-staging
   promotionTemplate:
     spec:
       vars:
