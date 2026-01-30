@@ -12,11 +12,11 @@ images:
 - name: quay.io/davidaparicio/app
   newName: quay.io/davidaparicio/red
   newTag: sha-2cce2c2
-replicas:
-- name: app
-  count: 1
 patches:
 - patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 1
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests/memory
       value: "32Mi"
@@ -32,8 +32,17 @@ patches:
     - op: add
       path: /spec/template/spec/containers/0/imagePullPolicy
       value: Always
+    - op: replace
+      path: /spec/strategy/blueGreen/activeService
+      value: red-app
+    - op: replace
+      path: /spec/strategy/blueGreen/previewService
+      value: red-app-preview
+    - op: replace
+      path: /spec/strategy/blueGreen/prePromotionAnalysis/templates/0/templateName
+      value: red-app-health-check
   target:
-    kind: Deployment
+    kind: Rollout
 - patch: |-
     - op: replace
       path: /spec/rules/0/host
@@ -93,4 +102,4 @@ patches:
           mountPath: /app/config
           readOnly: true
   target:
-    kind: Deployment
+    kind: Rollout

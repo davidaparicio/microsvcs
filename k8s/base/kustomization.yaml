@@ -4,7 +4,9 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - service.yaml
+  - service-preview.yaml
   - ingress.yaml
+  - analysis-template.yaml
 
 commonLabels:
   app.kubernetes.io/part-of: microsvcs

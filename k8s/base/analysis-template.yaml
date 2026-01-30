@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: app-health-check
+spec:
+  metrics:
+    - name: health-check
+      initialDelay: 10s
+      interval: 5s
+      count: 3
+      successCondition: result.status == "200"
+      provider:
+        web:
+          url: http://app-preview/healthz
+          method: GET

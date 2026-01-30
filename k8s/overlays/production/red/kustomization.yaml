@@ -12,11 +12,11 @@ images:
 - name: quay.io/davidaparicio/app
   newName: quay.io/davidaparicio/red
   newTag: 2.6.1
-replicas:
-- name: app
-  count: 3
 patches:
 - patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 3
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests/memory
       value: "128Mi"
@@ -29,8 +29,17 @@ patches:
     - op: replace
       path: /spec/template/spec/containers/0/resources/limits/cpu
       value: "500m"
+    - op: replace
+      path: /spec/strategy/blueGreen/activeService
+      value: red-app
+    - op: replace
+      path: /spec/strategy/blueGreen/previewService
+      value: red-app-preview
+    - op: replace
+      path: /spec/strategy/blueGreen/prePromotionAnalysis/templates/0/templateName
+      value: red-app-health-check
   target:
-    kind: Deployment
+    kind: Rollout
 - patch: |-
     - op: replace
       path: /spec/rules/0/host

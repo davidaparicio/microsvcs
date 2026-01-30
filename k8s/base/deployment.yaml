@@ -1,5 +1,5 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: app
   labels:
@@ -13,6 +13,15 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: app
+  strategy:
+    blueGreen:
+      activeService: app
+      previewService: app-preview
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 30
+      prePromotionAnalysis:
+        templates:
+          - templateName: app-health-check
   template:
     metadata:
       labels:
