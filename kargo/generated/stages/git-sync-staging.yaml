@@ -38,3 +38,13 @@ spec:
       - uses: git-push
         config:
           path: ./repo
+      - uses: argocd-update
+        config:
+          apps:
+          - name: git-sync-staging
+  verification:
+    analysisTemplates:
+    - name: http-check
+    args:
+    - name: service-name
+      value: git-sync

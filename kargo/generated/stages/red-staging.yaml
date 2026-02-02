@@ -38,3 +38,13 @@ spec:
       - uses: git-push
         config:
           path: ./repo
+      - uses: argocd-update
+        config:
+          apps:
+          - name: red-staging
+  verification:
+    analysisTemplates:
+    - name: http-check
+    args:
+    - name: service-name
+      value: red
