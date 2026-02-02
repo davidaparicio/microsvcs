@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+
+configMapGenerator:
+- name: landing-html
+  files:
+  - index.html=../../../../projects/landing/html/index.html
+
+commonLabels:
+  app.kubernetes.io/part-of: microsvcs
+  app.kubernetes.io/managed-by: argocd
