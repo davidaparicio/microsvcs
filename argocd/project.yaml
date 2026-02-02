@@ -28,12 +28,22 @@ spec:
       kind: ConfigMap
     - group: ''
       kind: Service
+    - group: ''
+      kind: ServiceAccount
     - group: apps
       kind: Deployment
     - group: autoscaling
       kind: HorizontalPodAutoscaler
     - group: networking.k8s.io
       kind: Ingress
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: policy
+      kind: PodDisruptionBudget
+    - group: rbac.authorization.k8s.io
+      kind: Role
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
 
   orphanedResources:
     warn: true

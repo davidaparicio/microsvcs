@@ -3,6 +3,8 @@ kind: Kustomization
 namespace: yellow-staging
 resources:
 - ../../../base
+- ../../../base/pdb.yaml
+- ../../../base/hpa.yaml
 namePrefix: yellow-
 commonLabels:
   app.kubernetes.io/name: yellow
@@ -35,5 +37,20 @@ patches:
     - op: replace
       path: /spec/rules/0/host
       value: yellow.stg.127.0.0.1.nip.io
+    - op: replace
+      path: /spec/tls/0/hosts/0
+      value: yellow.stg.127.0.0.1.nip.io
+    - op: replace
+      path: /spec/tls/0/secretName
+      value: yellow-tls
   target:
     kind: Ingress
+- patch: |-
+    - op: replace
+      path: /spec/minReplicas
+      value: 2
+    - op: replace
+      path: /spec/maxReplicas
+      value: 6
+  target:
+    kind: HorizontalPodAutoscaler
