@@ -1,0 +1,20 @@
+environment: staging
+replicaCount: 2
+
+image:
+  tag: "3.4.0"
+
+ingress:
+  host: red.stg.127.0.0.1.nip.io
+
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "100m"
+  limits:
+    memory: "128Mi"
+    cpu: "250m"
+
+gitSync:
+  enabled: true
+  syncInterval: "*/5 * * * *"

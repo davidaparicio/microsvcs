@@ -1,0 +1,30 @@
+Deployed {{ .Values.name }} ({{ .Values.environment }}) with {{ .Values.replicaCount }} replica(s).
+
+Image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+
+{{- if .Values.ingress.enabled }}
+Access the service at: http://{{ .Values.ingress.host }}
+{{- end }}
+
+{{- if .Values.gitSync.enabled }}
+Git-sync sidecar is enabled, syncing feature flags from {{ .Values.gitSync.repoURL }}.
+{{- end }}
+
+Example usage for other services:
+
+  helm install blue ./helm/microsvcs \
+    --set name=blue \
+    --set image.repository=quay.io/davidaparicio/blue \
+    --set ingress.host=blue.dev.127.0.0.1.nip.io
+
+  helm install red-prod ./helm/microsvcs \
+    --set name=red \
+    --set environment=production \
+    --set replicaCount=3 \
+    --set image.repository=quay.io/davidaparicio/red \
+    --set image.tag=2.6.1 \
+    --set ingress.host=red.prd.127.0.0.1.nip.io \
+    --set resources.requests.memory=128Mi \
+    --set resources.requests.cpu=200m \
+    --set resources.limits.memory=256Mi \
+    --set resources.limits.cpu=500m

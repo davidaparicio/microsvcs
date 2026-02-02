@@ -1,0 +1,12 @@
+apiVersion: v2
+name: microsvcs
+description: Helm chart for deploying WebColor microservices
+type: application
+version: 0.1.0
+appVersion: "2.1.2"
+keywords:
+  - microservices
+  - webcolor
+  - go
+maintainers:
+  - name: davidaparicio

@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "microsvcs.fullname" . }}
+  labels:
+    {{- include "microsvcs.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webserver
+spec:
+  progressDeadlineSeconds: {{ .Values.progressDeadlineSeconds }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "microsvcs.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "microsvcs.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Values.name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          env:
+            - name: PORT
+              value: {{ .Values.containerPort | quote }}
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- if .Values.gitSync.enabled }}
+          volumeMounts:
+            - name: shared-config
+              mountPath: {{ .Values.gitSync.mountPath }}
+              readOnly: true
+          {{- end }}
+        {{- if .Values.gitSync.enabled }}
+        - name: git-sync
+          image: {{ .Values.gitSync.image }}
+          env:
+            - name: GIT_REPO_URL
+              value: {{ .Values.gitSync.repoURL | quote }}
+            - name: GIT_BRANCH
+              value: {{ .Values.gitSync.branch | quote }}
+            - name: GIT_SOURCE_PATH
+              value: {{ .Values.gitSync.sourcePath | quote }}
+            - name: TARGET_PATH
+              value: {{ .Values.gitSync.targetPath | quote }}
+            - name: SYNC_INTERVAL
+              value: {{ .Values.gitSync.syncInterval | quote }}
+            - name: PORT
+              value: {{ .Values.gitSync.port | quote }}
+          volumeMounts:
+            - name: shared-config
+              mountPath: {{ .Values.gitSync.targetPath }}
+          resources:
+            {{- toYaml .Values.gitSync.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.gitSync.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.gitSync.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+        {{- end }}
+      {{- if .Values.gitSync.enabled }}
+      volumes:
+        - name: shared-config
+          emptyDir: {}
+      {{- end }}

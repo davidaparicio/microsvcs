@@ -1,0 +1,19 @@
+environment: production
+replicaCount: 3
+
+image:
+  tag: "2.6.1"
+
+ingress:
+  host: red.prd.127.0.0.1.nip.io
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "200m"
+  limits:
+    memory: "256Mi"
+    cpu: "500m"
+
+gitSync:
+  enabled: false
