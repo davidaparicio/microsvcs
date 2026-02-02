@@ -104,6 +104,54 @@ body::before {
     font-weight: 600;
 }
 
+/* KPI Section */
+.kpi-container {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px 24px 0;
+    flex-wrap: wrap;
+}
+
+.kpi-card {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-glass);
+    padding: 16px 24px;
+    text-align: center;
+    min-width: 160px;
+    animation: fadeIn 0.9s ease-out 0.1s backwards;
+    transition: var(--transition);
+}
+
+.kpi-card:hover {
+    background: rgba(255, 255, 255, 0.35);
+    box-shadow: var(--shadow-strong);
+    transform: translateY(-3px);
+}
+
+.kpi-label {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.kpi-value {
+    font-size: 1.6em;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.kpi-good { color: #059669; }
+.kpi-ok   { color: #d97706; }
+.kpi-bad  { color: #dc2626; }
+
 /* Grid Container */
 .grid-container {
     padding: 24px;

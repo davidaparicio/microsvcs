@@ -6,6 +6,9 @@ metadata:
     app.kubernetes.io/name: app
     app.kubernetes.io/component: webserver
 spec:
+  # After this timeout reduced from 600 (default), K8s set the ProgressDeadlineExceeded
+  # Argo CD will report the Deployment as Degraded instead of Healthy.
+  progressDeadlineSeconds: 60
   replicas: 1
   selector:
     matchLabels:

@@ -7,10 +7,12 @@ import (
 	"html/template"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/davidaparicio/microsvcs/projects/red/internal/name"
@@ -24,10 +26,42 @@ import (
 
 var users = make(map[string]ffcontext.EvaluationContext, 2500)
 
+// renderMetrics tracks server-side rendering performance
+type renderMetrics struct {
+	mu           sync.Mutex
+	requestCount int64
+	totalMs      float64
+	lastMs       float64
+	maxMs        float64
+	minMs        float64
+}
+
+func (m *renderMetrics) record(ms float64) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.requestCount++
+	m.totalMs += ms
+	m.lastMs = ms
+	if ms > m.maxMs {
+		m.maxMs = ms
+	}
+	if m.minMs == 0 || ms < m.minMs {
+		m.minMs = ms
+	}
+}
+
+var metrics = &renderMetrics{}
+
+// KPIData holds rendering speed metrics
+type KPIData struct {
+	ServerRenderMs float64
+}
+
 // PageData holds all data to be rendered in the template
 type PageData struct {
 	Users      map[string]string
 	SystemInfo SystemInfo
+	KPI        KPIData
 }
 
 // SystemInfo holds system and request information
@@ -77,6 +111,7 @@ func main() {
 	e.GET("/", apiHandler)
 	e.GET("/version", versionHandler)
 	e.GET("/healthz", healthzHandler)
+	e.GET("/metrics", metricsHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -114,6 +149,8 @@ func getCircle(color string) string {
 }
 
 func apiHandler(c echo.Context) error {
+	start := time.Now()
+
 	// Get user color variations
 	mapToRender := make(map[string]string, 2500)
 	for k, user := range users {
@@ -122,6 +159,12 @@ func apiHandler(c echo.Context) error {
 			log.Printf("Feature flag evaluation error for %s: %v", k, err)
 		}
 		mapToRender[k] = color
+	}
+
+	serverRenderMs := float64(time.Since(start).Microseconds()) / 1000.0
+	metrics.record(serverRenderMs)
+	kpi := KPIData{
+		ServerRenderMs: serverRenderMs,
 	}
 
 	// Get system information
@@ -152,6 +195,7 @@ func apiHandler(c echo.Context) error {
 	pageData := PageData{
 		Users:      mapToRender,
 		SystemInfo: sysInfo,
+		KPI:        kpi,
 	}
 
 	return c.Render(http.StatusOK, "template.html", pageData)
@@ -163,6 +207,35 @@ func versionHandler(c echo.Context) error {
 		"commit":  version.GitCommit,
 	}
 	return c.JSON(http.StatusOK, response)
+}
+
+func metricsHandler(c echo.Context) error {
+	metrics.mu.Lock()
+	count := metrics.requestCount
+	totalMs := metrics.totalMs
+	lastMs := metrics.lastMs
+	maxMs := metrics.maxMs
+	minMs := metrics.minMs
+	metrics.mu.Unlock()
+
+	avgMs := 0.0
+	if count > 0 {
+		avgMs = math.Round(totalMs/float64(count)*100) / 100
+	}
+
+	out := fmt.Sprintf(
+		"# HELP http_render_duration_milliseconds Server-side page render duration in milliseconds.\n"+
+			"# TYPE http_render_duration_milliseconds gauge\n"+
+			"http_render_duration_milliseconds{stat=\"last\"} %.2f\n"+
+			"http_render_duration_milliseconds{stat=\"avg\"} %.2f\n"+
+			"http_render_duration_milliseconds{stat=\"min\"} %.2f\n"+
+			"http_render_duration_milliseconds{stat=\"max\"} %.2f\n"+
+			"# HELP http_render_requests_total Total number of page render requests.\n"+
+			"# TYPE http_render_requests_total counter\n"+
+			"http_render_requests_total %d\n",
+		lastMs, avgMs, minMs, maxMs, count,
+	)
+	return c.String(http.StatusOK, out)
 }
 
 func healthzHandler(c echo.Context) error {

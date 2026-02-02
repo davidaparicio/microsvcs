@@ -18,6 +18,25 @@
     </div>
 </header>
 
+<section class="kpi-container">
+    <div class="kpi-card">
+        <div class="kpi-label">Server render</div>
+        <div class="kpi-value">{{printf "%.2f" .KPI.ServerRenderMs}} ms</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">TTFB</div>
+        <div class="kpi-value" id="kpi-ttfb">--</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">DOM Ready</div>
+        <div class="kpi-value" id="kpi-dom-ready">--</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">Page Load</div>
+        <div class="kpi-value" id="kpi-page-load">--</div>
+    </div>
+</section>
+
 <main class="grid-container">
 <table class="color-grid">
     <tr>

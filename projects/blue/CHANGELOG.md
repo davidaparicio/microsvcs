@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.3.1](https://github.com/davidaparicio/microsvcs/compare/blue/3.3.0...blue/3.3.1) (2026-01-30)
+
+
+### Bug Fixes
+
+* **color:** make quay.io image ([#99](https://github.com/davidaparicio/microsvcs/issues/99)) ([2cce2c2](https://github.com/davidaparicio/microsvcs/commit/2cce2c2eb6062a2f3e5c30483640bb8c7987178e))
+
+## [3.3.0](https://github.com/davidaparicio/microsvcs/compare/blue/3.2.0...blue/3.3.0) (2026-01-29)
+
+
+### Features
+
+* add test coverage reporting to CI and Makefiles ([#68](https://github.com/davidaparicio/microsvcs/issues/68)) ([cb4c7dd](https://github.com/davidaparicio/microsvcs/commit/cb4c7dd2007a4cc346e88356f44dbb90278cf825))
+
+
+### Bug Fixes
+
+* handle feature flag initialization and evaluation errors ([#85](https://github.com/davidaparicio/microsvcs/issues/85)) ([86a5d27](https://github.com/davidaparicio/microsvcs/commit/86a5d271a3731624eaeb735832008e7a63bc17a2))
+
 ## [3.2.0](https://github.com/davidaparicio/microsvcs/compare/blue/3.1.0...blue/3.2.0) (2026-01-29)
 
 

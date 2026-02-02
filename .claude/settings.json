@@ -6,6 +6,8 @@
       "Bash(kubectl explain:*)",
       "Bash(kubectl get:*)",
       "Bash(kubectl logs:*)",
+      "Bash(kubectl kustomize:*)",
+      "Bash(kustomize build:*)",
       "Bash(kargo get:*)",
       "Bash(go mod tidy:*)",
       "Bash(go test:*)",
