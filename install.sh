@@ -31,6 +31,14 @@ INGRESS_NGINX_VERSION=v1.14.2
 CLUSTER_NAME="microsvcs"
 KIND_CONFIG="k8s/kind-config.yaml"
 
+# Generate secure admin passwords (override via environment variables)
+generate_password() {
+    openssl rand -base64 24 | tr -d '/+=' | head -c 24
+}
+
+ARGOCD_ADMIN_PASSWORD="${ARGOCD_ADMIN_PASSWORD:-$(generate_password)}"
+KARGO_ADMIN_PASSWORD="${KARGO_ADMIN_PASSWORD:-$(generate_password)}"
+
 # Parse command line arguments
 SKIP_CLUSTER=false
 SKIP_WAIT=false
@@ -68,8 +76,8 @@ while [[ $# -gt 0 ]]; do
             echo "  - Ingress NGINX ${INGRESS_NGINX_VERSION}"
             echo ""
             echo "Credentials:"
-            echo "  ArgoCD:  admin / admin"
-            echo "  Kargo:   admin / admin"
+            echo "  ArgoCD:  admin / <generated or ARGOCD_ADMIN_PASSWORD>"
+            echo "  Kargo:   admin / <generated or KARGO_ADMIN_PASSWORD>"
             exit 0
             ;;
         *)
@@ -97,6 +105,8 @@ echo "🔍 Checking dependencies..."
 check_dependency "kind" "https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
 check_dependency "kubectl" "https://kubernetes.io/docs/tasks/tools/"
 check_dependency "helm" "https://helm.sh/docs/intro/install/"
+check_dependency "htpasswd" "apt-get install apache2-utils (Debian/Ubuntu) or brew install httpd (macOS)"
+check_dependency "openssl" "https://www.openssl.org/source/"
 echo -e "  ${GREEN}✅${NC} All dependencies installed"
 echo ""
 
@@ -166,12 +176,13 @@ echo ""
 
 # Install ArgoCD
 echo -e "${BLUE}🚀 Installing ArgoCD ${ARGO_CD_CHART_VERSION}...${NC}"
+ARGOCD_BCRYPT_HASH=$(htpasswd -nbBC 10 "" "${ARGOCD_ADMIN_PASSWORD}" | tr -d ':\n' | sed 's/$2y/$2a/')
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
   --version "${ARGO_CD_CHART_VERSION}" \
   --namespace argocd \
   --create-namespace \
-  --set 'configs.secret.argocdServerAdminPassword=$2a$10$5vm8wXaSdbuff0m9l21JdevzXBzJFPCi8sy6OOnpZMAG.fOXL7jvO' \
+  --set "configs.secret.argocdServerAdminPassword=${ARGOCD_BCRYPT_HASH}" \
   --set dex.enabled=false \
   --set notifications.enabled=false \
   --set server.service.type=NodePort \
@@ -182,7 +193,7 @@ helm upgrade --install argocd argo-cd \
   --set 'server.extensions.contents[0].url=https://github.com/argoproj-labs/rollout-extension/releases/download/v0.3.3/extension.tar' \
   --wait
 echo -e "  ${GREEN}✅${NC} ArgoCD installed"
-echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31443 (admin/admin)"
+echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31443 (admin/${ARGOCD_ADMIN_PASSWORD})"
 echo ""
 
 # Install Argo Rollouts
@@ -198,19 +209,21 @@ echo ""
 
 # Install Kargo
 echo -e "${BLUE}📦 Installing Kargo...${NC}"
+KARGO_BCRYPT_HASH=$(htpasswd -nbBC 10 "" "${KARGO_ADMIN_PASSWORD}" | tr -d ':\n' | sed 's/$2y/$2a/')
+KARGO_TOKEN_SIGNING_KEY=$(openssl rand -base64 32)
 helm upgrade --install kargo \
   oci://ghcr.io/akuity/kargo-charts/kargo \
   --namespace kargo \
   --create-namespace \
   --set api.service.type=NodePort \
   --set api.service.nodePort=31444 \
-  --set api.adminAccount.passwordHash='$2a$10$Zrhhie4vLz5ygtVSaif6o.qN36jgs6vjtMBdM6yrU1FOeiAAMMxOm' \
-  --set api.adminAccount.tokenSigningKey=iwishtowashmyirishwristwatch \
+  --set "api.adminAccount.passwordHash=${KARGO_BCRYPT_HASH}" \
+  --set "api.adminAccount.tokenSigningKey=${KARGO_TOKEN_SIGNING_KEY}" \
   --set externalWebhooksServer.service.type=NodePort \
   --set externalWebhooksServer.service.nodePort=31445 \
   --wait
 echo -e "  ${GREEN}✅${NC} Kargo installed"
-echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31444 (admin/admin)"
+echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31444 (admin/${KARGO_ADMIN_PASSWORD})"
 echo ""
 
 # Apply ArgoCD resources
@@ -369,8 +382,8 @@ echo ""
 echo -e "${GREEN}🎉 Setup Complete!${NC}"
 echo ""
 echo "Access Points:"
-echo -e "  ${BLUE}ArgoCD:${NC}  http://localhost:31443 (admin/admin)"
-echo -e "  ${BLUE}Kargo:${NC}   http://localhost:31444 (admin/admin)"
+echo -e "  ${BLUE}ArgoCD:${NC}  http://localhost:31443 (admin/${ARGOCD_ADMIN_PASSWORD})"
+echo -e "  ${BLUE}Kargo:${NC}   http://localhost:31444 (admin/${KARGO_ADMIN_PASSWORD})"
 echo ""
 echo "Next Steps:"
 echo "  1. Access ArgoCD to verify applications are synced"
