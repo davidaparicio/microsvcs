@@ -3,6 +3,8 @@ kind: Kustomization
 namespace: blue-staging
 resources:
 - ../../../base
+- ../../../base/pdb.yaml
+- ../../../base/hpa.yaml
 namePrefix: blue-
 commonLabels:
   app.kubernetes.io/name: blue
@@ -35,5 +37,20 @@ patches:
     - op: replace
       path: /spec/rules/0/host
       value: blue.stg.127.0.0.1.nip.io
+    - op: replace
+      path: /spec/tls/0/hosts/0
+      value: blue.stg.127.0.0.1.nip.io
+    - op: replace
+      path: /spec/tls/0/secretName
+      value: blue-tls
   target:
     kind: Ingress
+- patch: |-
+    - op: replace
+      path: /spec/minReplicas
+      value: 2
+    - op: replace
+      path: /spec/maxReplicas
+      value: 6
+  target:
+    kind: HorizontalPodAutoscaler

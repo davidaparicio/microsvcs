@@ -38,5 +38,11 @@ patches:
     - op: replace
       path: /spec/rules/0/host
       value: blue.dev.127.0.0.1.nip.io
+    - op: replace
+      path: /spec/tls/0/hosts/0
+      value: blue.dev.127.0.0.1.nip.io
+    - op: replace
+      path: /spec/tls/0/secretName
+      value: blue-tls
   target:
     kind: Ingress
