@@ -37,3 +37,57 @@ patches:
       value: red.stg.127.0.0.1.nip.io
   target:
     kind: Ingress
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/-
+      value:
+        name: git-sync
+        image: quay.io/davidaparicio/git-sync:latest
+        env:
+        - name: GIT_REPO_URL
+          value: "https://github.com/davidaparicio/microsvcs.git"
+        - name: GIT_BRANCH
+          value: "main"
+        - name: GIT_SOURCE_PATH
+          value: "color/demo-flags.goff.yaml"
+        - name: TARGET_PATH
+          value: "/shared/config"
+        - name: SYNC_INTERVAL
+          value: "*/5 * * * *"
+        - name: PORT
+          value: "9090"
+        volumeMounts:
+        - name: shared-config
+          mountPath: /shared/config
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "100m"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9090
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 9090
+          initialDelaySeconds: 5
+          periodSeconds: 10
+    - op: add
+      path: /spec/template/spec/volumes
+      value:
+        - name: shared-config
+          emptyDir: {}
+    - op: add
+      path: /spec/template/spec/containers/0/volumeMounts
+      value:
+        - name: shared-config
+          mountPath: /app/config
+          readOnly: true
+  target:
+    kind: Deployment
