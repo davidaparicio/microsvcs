@@ -6,10 +6,13 @@ on:
     paths:
       - 'projects/**'
 
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+# NOTE: Quay.io does not support OIDC/keyless authentication natively.
+# QUAY_TOKEN is a long-lived robot account token stored as a GitHub secret.
+# If Quay.io adds OIDC support in the future, migrate to id-token based auth
+# to eliminate stored credentials. See: https://github.com/docker/login-action#quayio
+
+# Minimal top-level permissions; jobs declare only what they need.
+permissions: {}
 
 env:
   REGISTRY: quay.io
@@ -17,6 +20,10 @@ env:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     outputs:
       red--release_created: ${{ steps.release.outputs['projects/red--release_created'] }}
       red--version: ${{ steps.release.outputs['projects/red--version'] }}
@@ -43,6 +50,8 @@ jobs:
 
   detect-changes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       has_changes: ${{ steps.set-matrix.outputs.has_changes }}
@@ -81,6 +90,11 @@ jobs:
     needs: [release-please, detect-changes]
     if: needs.detect-changes.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write    # Required for cosign keyless signing via Sigstore/Fulcio
+      attestations: write # Required for SLSA provenance attestations
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
@@ -104,6 +118,9 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@3454372be43f9e7f942dc7af20b9e2a6e09891e0 # v3.8.2
 
       - name: Generate short SHA
         id: sha
@@ -139,9 +156,10 @@ jobs:
           # Extract namespace from username (remove +robotname if present)
           NAMESPACE="${USERNAME%%+*}"
 
+          # Dev builds get sha-prefixed tags (matched by Kargo dev warehouse: ^sha-.*)
           TAGS="$REGISTRY/$NAMESPACE/$PROJECT:sha-$SHA"
-          TAGS="$TAGS"$'\n'"$REGISTRY/$NAMESPACE/$PROJECT:latest"
 
+          # Release builds get semver tags (matched by Kargo releases warehouse: SemVer)
           if [ "$IS_RELEASE" == "true" ]; then
             TAGS="$TAGS"$'\n'"$REGISTRY/$NAMESPACE/$PROJECT:$VERSION"
           fi
@@ -150,7 +168,11 @@ jobs:
           echo "$TAGS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+          # Export image ref for signing (first tag)
+          echo "primary_tag=$REGISTRY/$NAMESPACE/$PROJECT:sha-$SHA" >> $GITHUB_OUTPUT
+
       - name: Build and push ${{ matrix.project }}
+        id: build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           context: projects/${{ matrix.project }}
@@ -162,8 +184,33 @@ jobs:
             VERSION=${{ steps.metadata.outputs.build_version }}
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             GIT_COMMIT=${{ github.sha }}
-          cache-from: type=gha,scope=${{ matrix.project }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.project }}
+          # Scope cache per project and ref to prevent cross-branch cache poisoning
+          cache-from: type=gha,scope=${{ matrix.project }}-${{ github.ref_name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.project }}-${{ github.ref_name }}
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.31.0
+        with:
+          image-ref: ${{ steps.tags.outputs.primary_tag }}
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      - name: Sign image with cosign (keyless)
+        run: |
+          IMAGE="${{ steps.tags.outputs.primary_tag }}"
+          DIGEST="${{ steps.build.outputs.digest }}"
+          cosign sign --yes "${IMAGE}@${DIGEST}"
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+
+      - name: Generate SLSA provenance attestation
+        uses: actions/attest-build-provenance@db473fddc028af60658334401dc6fa3ffd8669fd # v2.3.0
+        with:
+          subject-name: ${{ steps.tags.outputs.primary_tag }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
 
       - name: Summary
         run: |
@@ -172,14 +219,18 @@ jobs:
           PROJECT="${{ matrix.project }}"
           USERNAME="${{ vars.QUAY_USERNAME }}"
           SHA="${{ steps.sha.outputs.short }}"
+          DIGEST="${{ steps.build.outputs.digest }}"
 
           # Extract namespace from username (remove +robotname if present)
           NAMESPACE="${USERNAME%%+*}"
 
-          echo "### 🐳 Built and Pushed Image" >> $GITHUB_STEP_SUMMARY
+          echo "### Built and Pushed Image" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Service:** $PROJECT" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Digest:** $DIGEST" >> $GITHUB_STEP_SUMMARY
+          echo "**Signed:** Yes (cosign keyless via Sigstore)" >> $GITHUB_STEP_SUMMARY
+          echo "**Provenance:** SLSA Build Level 2" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ "$IS_RELEASE" == "true" ]; then
@@ -188,7 +239,6 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
             echo "- \`$NAMESPACE/$PROJECT:$VERSION\`" >> $GITHUB_STEP_SUMMARY
-            echo "- \`$NAMESPACE/$PROJECT:latest\`" >> $GITHUB_STEP_SUMMARY
             echo "- \`$NAMESPACE/$PROJECT:sha-$SHA\`" >> $GITHUB_STEP_SUMMARY
           else
             echo "**Build Type:** Development" >> $GITHUB_STEP_SUMMARY
@@ -196,7 +246,6 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
             echo "- \`$NAMESPACE/$PROJECT:sha-$SHA\`" >> $GITHUB_STEP_SUMMARY
-            echo "- \`$NAMESPACE/$PROJECT:latest\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Kargo will detect this image and promote to DEV automatically." >> $GITHUB_STEP_SUMMARY
           fi
