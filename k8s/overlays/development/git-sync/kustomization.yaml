@@ -5,6 +5,8 @@ resources:
 - ../../../base/git-sync-deployment.yaml
 - ../../../base/git-sync-service.yaml
 - ../../../base/git-sync-ingress.yaml
+- ../resourcequota.yaml
+- ../limitrange.yaml
 namePrefix: git-sync-
 commonLabels:
   app.kubernetes.io/name: git-sync

@@ -3,6 +3,8 @@ kind: Kustomization
 namespace: red-development
 resources:
 - ../../../base
+- ../resourcequota.yaml
+- ../limitrange.yaml
 namePrefix: red-
 commonLabels:
   app.kubernetes.io/name: red
