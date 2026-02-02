@@ -4,6 +4,8 @@ metadata:
   name: app
   labels:
     app.kubernetes.io/name: app
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   type: ClusterIP
   ports:
