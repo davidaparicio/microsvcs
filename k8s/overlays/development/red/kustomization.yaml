@@ -45,7 +45,7 @@ patches:
       path: /spec/template/spec/containers/-
       value:
         name: git-sync
-        image: quay.io/davidaparicio/git-sync:latest
+        image: quay.io/davidaparicio/git-sync:0.2.3
         env:
         - name: GIT_REPO_URL
           value: "https://github.com/davidaparicio/microsvcs.git"

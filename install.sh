@@ -255,13 +255,13 @@ if [[ -f "kargo/.env" ]]; then
             kubectl create namespace microsvcs --dry-run=client -o yaml | kubectl apply -f -
             kubectl label namespace microsvcs kargo.akuity.io/project=true --overwrite &> /dev/null
 
-            # Apply git credentials
+            # Apply git credentials (whitelist variables to prevent template injection)
             echo "  • Applying GitHub credentials..."
-            envsubst < kargo/git-credentials.yaml | kubectl apply -f - &> /dev/null
+            envsubst '${GITHUB_USERNAME} ${GITHUB_PAT}' < kargo/git-credentials.yaml | kubectl apply -f - &> /dev/null
 
-            # Apply Quay.io credentials
+            # Apply Quay.io credentials (whitelist variables to prevent template injection)
             echo "  • Applying Quay.io credentials..."
-            envsubst < kargo/quay-credentials.yaml | kubectl apply -f - &> /dev/null
+            envsubst '${QUAY_USERNAME} ${QUAY_PAT}' < kargo/quay-credentials.yaml | kubectl apply -f - &> /dev/null
 
             echo -e "  ${GREEN}✅${NC} Kargo secrets applied"
         fi
