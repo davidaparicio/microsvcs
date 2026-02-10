@@ -3,7 +3,7 @@ module github.com/davidaparicio/microsvcs/projects/git-sync
 go 1.25.5
 
 require (
-	github.com/go-git/go-git/v5 v5.16.4
+	github.com/go-git/go-git/v5 v5.16.5
 	github.com/labstack/echo/v4 v4.15.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.11.1
