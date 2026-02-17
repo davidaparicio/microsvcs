@@ -13,7 +13,7 @@ commonLabels:
 images:
 - name: quay.io/davidaparicio/app
   newName: quay.io/davidaparicio/git-sync
-  newTag: sha-af806b0
+  newTag: sha-cdacaea
 replicas:
 - name: app
   count: 1
