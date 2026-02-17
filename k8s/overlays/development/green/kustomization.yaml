@@ -11,7 +11,7 @@ commonLabels:
 images:
 - name: quay.io/davidaparicio/app
   newName: quay.io/davidaparicio/green
-  newTag: sha-cdacaea
+  newTag: sha-0ef2a60
 replicas:
 - name: app
   count: 1
