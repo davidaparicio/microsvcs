@@ -1,44 +1,28 @@
 <!doctype html>
 <html lang="en">
 <head>
+    <title>GO Feature Flag demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>GO Feature Flag Demo</title>
-    <meta name="description" content="GO Feature Flag demonstration with dynamic color grid">
-    <link href="css/style.css" rel="stylesheet">
+    <title>Bootstrap demo</title>
+    <link href="css/style.css" rel="stylesheet" crossorigin="anonymous">
 </head>
 <body>
 
-<header class="demo-header">
-    <h1 class="demo-title">GO Feature Flag Demo</h1>
-    <div class="system-info">
-        <span class="info-circle">{{.SystemInfo.Circle}}</span>
-        <span class="info-text">This is <strong>{{.SystemInfo.DisplayName}}</strong> on {{.SystemInfo.OS}}/{{.SystemInfo.Arch}}, serving {{.SystemInfo.Path}} for {{.SystemInfo.RemoteAddr}}</span>
-        <span class="info-text">Service version: <strong>{{.SystemInfo.ServiceVersion}}</strong> based on the commit: <strong>{{.SystemInfo.ServiceCommit}}</strong></span>
-    </div>
-</header>
+<div style="background: white; padding: 20px; text-align: center; border-bottom: 2px solid #333; margin-bottom: 0;">
+    <h1 style="margin: 0 0 10px 0; color: #333;">GO Feature Flag Demo</h1>
+    <p style="font-size: 1.2em; margin: 0; padding: 10px; background: #f5f5f5; border-radius: 5px; display: inline-block;">
+        {{.SystemInfo.Circle}} This is <strong>{{.SystemInfo.DisplayName}}</strong> on {{.SystemInfo.OS}}/{{.SystemInfo.Arch}}, serving {{.SystemInfo.Path}} for {{.SystemInfo.RemoteAddr}}
+    </p>
+    <p style="font-size: 1.2em; margin: 10px 0 0 0; padding: 10px; background: #f5f5f5; border-radius: 5px; display: inline-block;">
+        Service version: <strong>{{.SystemInfo.ServiceVersion}}</strong> based on the commit: <strong>{{.SystemInfo.ServiceCommit}}</strong>
+    </p>
+</div>
 
-<section class="kpi-container">
-    <div class="kpi-card">
-        <div class="kpi-label">Server render</div>
-        <div class="kpi-value">{{printf "%.2f" .KPI.ServerRenderMs}} ms</div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-label">TTFB</div>
-        <div class="kpi-value" id="kpi-ttfb">--</div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-label">DOM Ready</div>
-        <div class="kpi-value" id="kpi-dom-ready">--</div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-label">Page Load</div>
-        <div class="kpi-value" id="kpi-page-load">--</div>
-    </div>
-</section>
 
-<main class="grid-container">
-<table class="color-grid">
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
     <tr>
         <td class="{{ index .Users "user0"}}">&nbsp;</td>
         <td class="{{ index .Users "user1"}}">&nbsp;</td>
@@ -2640,7 +2624,6 @@
         <td class="{{ index .Users "user2499"}}">&nbsp;</td>
     </tr>
 </table>
-</main>
 
 <script src="js/script.js"></script>
 </body>
