@@ -1,0 +1,57 @@
+# Copier template for GoColor microservices
+# https://github.com/copier-org/copier
+#
+# Usage - generate a new service:
+#   copier copy ./copier-microservice-template projects/purple
+#
+# Usage - update an existing service after template changes:
+#   copier update projects/red
+
+_min_copier_version: "9.0.0"
+_subdirectory: template
+
+questions:
+  service_name:
+    type: str
+    help: "Name of the microservice (e.g. red, blue, green, yellow)"
+    placeholder: "mycolor"
+
+  org:
+    type: str
+    help: "GitHub organisation / Quay.io namespace"
+    default: "davidaparicio"
+
+  module_root:
+    type: str
+    help: "Go module root path (without the service name)"
+    default: "github.com/{{ org }}/microsvcs/projects"
+
+  author_name:
+    type: str
+    help: "Author full name"
+    default: "David Aparicio"
+
+  author_email:
+    type: str
+    help: "Author email"
+    default: "david.aparicio@free.fr"
+
+  go_version:
+    type: str
+    help: "Go toolchain version used in go.mod / Dockerfile"
+    default: "1.25.5"
+
+  go_image_version:
+    type: str
+    help: "golang Docker image tag (major.minor-alpine)"
+    default: "1.26-alpine3.23"
+
+  go_image_digest:
+    type: str
+    help: "golang Docker image SHA256 digest (for reproducible builds)"
+    default: "d4c4845f5d60c6a974c6000ce58ae079328d03ab7f721a0734277e69905473e5"
+
+  year:
+    type: int
+    help: "Copyright year"
+    default: 2026
