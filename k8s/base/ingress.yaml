@@ -5,6 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: app
   annotations:
+    argocd.argoproj.io/sync-wave: "2"
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
