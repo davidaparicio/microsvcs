@@ -65,17 +65,18 @@ data:
   password: YXBwcGFzc3dvcmQ=
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: app-postgres
   namespace: pg
 spec:
+  serviceName: app-postgres
   replicas: 1
   selector:
     matchLabels:
       app: app-postgres
-  strategy:
-    type: Recreate
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -141,6 +142,6 @@ spec:
   ports:
     - port: 5432
       targetPort: 5432
+  clusterIP: None
   selector:
     app: app-postgres
-  #type: ClusterIP
