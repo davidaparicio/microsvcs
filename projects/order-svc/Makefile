@@ -12,12 +12,16 @@ MIGRATE       = migrate -path ./migrations -database "$(DATABASE_URL)"
 # Number of steps to roll back (default 1).  Override: make migrate-down N=3
 N ?= 1
 
-.PHONY: run migrate-up migrate-down migrate-force seed \
+.PHONY: run test migrate-up migrate-down migrate-force seed \
         docker-up docker-down docker-psql tools help
 
 ## Run the server (requires a running Postgres)
 run:
 	go run ./cmd/server
+
+## Run tests
+test:
+	go test ./...
 
 ## Apply all pending migrations
 migrate-up:
