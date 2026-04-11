@@ -1,24 +1,21 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5"
+	"github.com/labstack/echo/v4"
 )
 
-// OrderItem maps to order_items.
-// IMPORTANT: references column "unit_price" — broken after migration 007 renames it to "price".
-// To fix post-007: rename UnitPrice→Price here and update all SQL below.
+// OrderItem maps to order_items after migration 007 (unit_price renamed to price).
 type OrderItem struct {
 	ID        int     `json:"id"`
 	ProductID int     `json:"product_id"`
 	Quantity  int     `json:"quantity"`
-	UnitPrice float64 `json:"unit_price"` // column renamed to "price" in migration 007
+	Price     float64 `json:"price"`
 }
 
 // Order maps to the orders table.
@@ -31,12 +28,13 @@ type Order struct {
 	Items      []OrderItem `json:"items,omitempty"`
 }
 
-func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.db.Query(r.Context(),
-		`SELECT id, customer_id, status, total, created_at FROM orders ORDER BY id`)
+func (h *Handler) ListOrders(c echo.Context) error {
+	limit, offset := parsePagination(c)
+	rows, err := h.db.Query(c.Request().Context(),
+		`SELECT id, customer_id, status, total, created_at FROM orders ORDER BY id LIMIT $1 OFFSET $2`,
+		limit, offset)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to list orders"})
 	}
 	defer rows.Close()
 
@@ -44,61 +42,54 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var o Order
 		if err := rows.Scan(&o.ID, &o.CustomerID, &o.Status, &o.Total, &o.CreatedAt); err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
-			return
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to scan order"})
 		}
 		orders = append(orders, o)
 	}
 	if err := rows.Err(); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to iterate orders"})
 	}
-	writeJSON(w, http.StatusOK, orders)
+	return c.JSON(http.StatusOK, orders)
 }
 
-func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+func (h *Handler) GetOrder(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid id")
-		return
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid id"})
 	}
 
 	var o Order
-	err = h.db.QueryRow(r.Context(),
+	err = h.db.QueryRow(c.Request().Context(),
 		`SELECT id, customer_id, status, total, created_at FROM orders WHERE id = $1`, id).
 		Scan(&o.ID, &o.CustomerID, &o.Status, &o.Total, &o.CreatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			writeError(w, http.StatusNotFound, "order not found")
-			return
+		if isNotFound(err) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "order not found"})
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to get order"})
 	}
 
-	// Fetch items — references unit_price; breaks after migration 007 renames it to "price"
-	irows, err := h.db.Query(r.Context(), `
-		SELECT id, product_id, quantity, unit_price
+	// Fetch items — uses "price" column (post migration 007)
+	irows, err := h.db.Query(c.Request().Context(), `
+		SELECT id, product_id, quantity, price
 		FROM order_items WHERE order_id = $1 ORDER BY id`, id)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to fetch order items"})
 	}
 	defer irows.Close()
 
 	o.Items = []OrderItem{}
 	for irows.Next() {
 		var oi OrderItem
-		if err := irows.Scan(&oi.ID, &oi.ProductID, &oi.Quantity, &oi.UnitPrice); err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
-			return
+		if err := irows.Scan(&oi.ID, &oi.ProductID, &oi.Quantity, &oi.Price); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to scan order item"})
 		}
 		o.Items = append(o.Items, oi)
 	}
-	writeJSON(w, http.StatusOK, o)
+	return c.JSON(http.StatusOK, o)
 }
 
-func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateOrder(c echo.Context) error {
 	var body struct {
 		CustomerID int `json:"customer_id"`
 		Items      []struct {
@@ -106,77 +97,77 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 			Quantity  int `json:"quantity"`
 		} `json:"items"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid JSON")
-		return
+	if err := c.Bind(&body); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 	}
 	if body.CustomerID == 0 || len(body.Items) == 0 {
-		writeError(w, http.StatusUnprocessableEntity, "customer_id and items required")
-		return
+		return c.JSON(http.StatusUnprocessableEntity, map[string]string{"error": "customer_id and items required"})
+	}
+	for _, item := range body.Items {
+		if item.Quantity <= 0 {
+			return c.JSON(http.StatusUnprocessableEntity, map[string]string{"error": "quantity must be positive"})
+		}
 	}
 
-	tx, err := h.db.Begin(r.Context())
+	ctx := c.Request().Context()
+	tx, err := h.db.Begin(ctx)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to begin transaction"})
 	}
-	defer tx.Rollback(r.Context()) //nolint:errcheck
+	defer tx.Rollback(ctx) //nolint:errcheck
 
 	var o Order
-	err = tx.QueryRow(r.Context(), `
+	err = tx.QueryRow(ctx, `
 		INSERT INTO orders (customer_id, status, total)
 		VALUES ($1, 'pending', 0)
 		RETURNING id, customer_id, status, total, created_at`,
 		body.CustomerID).
 		Scan(&o.ID, &o.CustomerID, &o.Status, &o.Total, &o.CreatedAt)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create order"})
 	}
 
 	var total float64
 	for _, item := range body.Items {
 		// Snapshot the current product price into the order item
 		var unitPrice float64
-		err = tx.QueryRow(r.Context(),
+		err = tx.QueryRow(ctx,
 			`SELECT price FROM products WHERE id = $1`, item.ProductID).
 			Scan(&unitPrice)
 		if err != nil {
-			if err == pgx.ErrNoRows {
-				writeError(w, http.StatusUnprocessableEntity,
-					fmt.Sprintf("product %d not found", item.ProductID))
-				return
+			if isNotFound(err) {
+				return c.JSON(http.StatusUnprocessableEntity, map[string]string{
+					"error": fmt.Sprintf("product %d not found", item.ProductID),
+				})
 			}
-			writeError(w, http.StatusInternalServerError, err.Error())
-			return
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to fetch product price"})
 		}
 
-		// Insert order item — references unit_price; breaks after migration 007
+		// Insert order item — uses "price" column (post migration 007)
 		var oi OrderItem
-		err = tx.QueryRow(r.Context(), `
-			INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+		err = tx.QueryRow(ctx, `
+			INSERT INTO order_items (order_id, product_id, quantity, price)
 			VALUES ($1, $2, $3, $4)
-			RETURNING id, product_id, quantity, unit_price`,
+			RETURNING id, product_id, quantity, price`,
 			o.ID, item.ProductID, item.Quantity, unitPrice).
-			Scan(&oi.ID, &oi.ProductID, &oi.Quantity, &oi.UnitPrice)
+			Scan(&oi.ID, &oi.ProductID, &oi.Quantity, &oi.Price)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
-			return
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create order item"})
 		}
 		o.Items = append(o.Items, oi)
-		total += unitPrice * float64(item.Quantity)
+		// S6: round each line-item subtotal to avoid float64 accumulation errors
+		total += math.Round(unitPrice*float64(item.Quantity)*100) / 100
 	}
 
-	if _, err = tx.Exec(r.Context(),
-		`UPDATE orders SET total = $1 WHERE id = $2`, total, o.ID); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+	// S9: explicitly set updated_at on total update
+	if _, err = tx.Exec(ctx,
+		`UPDATE orders SET total = $1, updated_at = NOW() WHERE id = $2`, total, o.ID); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to update order total"})
 	}
 	o.Total = total
 
-	if err := tx.Commit(r.Context()); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+	if err := tx.Commit(ctx); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to commit order"})
 	}
-	writeJSON(w, http.StatusCreated, o)
+	return c.JSON(http.StatusCreated, o)
 }

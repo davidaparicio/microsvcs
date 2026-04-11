@@ -5,11 +5,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/davidaparicio/microsvcs/order-svc/internal/handlers"
 )
@@ -24,7 +27,15 @@ func main() {
 		log.Fatal("DATABASE_URL is required")
 	}
 
-	pool, err := pgxpool.New(context.Background(), dsn)
+	// S8: configure DB pool instead of using defaults.
+	cfg, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		log.Fatalf("parse db config: %v", err)
+	}
+	cfg.MaxConns = 25
+	cfg.MinConns = 5
+
+	pool, err := pgxpool.NewWithConfig(context.Background(), cfg)
 	if err != nil {
 		log.Fatalf("connect db: %v", err)
 	}
@@ -35,41 +46,54 @@ func main() {
 	}
 	log.Println("database connected")
 
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	e := echo.New()
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
 
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status":"ok"}`))
+	e.GET("/health", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 
 	h := handlers.New(pool)
 
-	r.Route("/api/v1", func(r chi.Router) {
-		r.Route("/customers", func(r chi.Router) {
-			r.Get("/", h.ListCustomers)
-			r.Post("/", h.CreateCustomer)
-			r.Get("/{id}", h.GetCustomer)
-		})
-		r.Route("/products", func(r chi.Router) {
-			r.Get("/", h.ListProducts)
-			r.Post("/", h.CreateProduct)
-			r.Get("/{id}", h.GetProduct)
-		})
-		r.Route("/orders", func(r chi.Router) {
-			r.Get("/", h.ListOrders)
-			r.Post("/", h.CreateOrder)
-			r.Get("/{id}", h.GetOrder)
-		})
-	})
+	api := e.Group("/api/v1")
+
+	customers := api.Group("/customers")
+	customers.GET("", h.ListCustomers)
+	customers.POST("", h.CreateCustomer)
+	customers.GET("/:id", h.GetCustomer)
+
+	products := api.Group("/products")
+	products.GET("", h.ListProducts)
+	products.POST("", h.CreateProduct)
+	products.GET("/:id", h.GetProduct)
+
+	orders := api.Group("/orders")
+	orders.GET("", h.ListOrders)
+	orders.POST("", h.CreateOrder)
+	orders.GET("/:id", h.GetOrder)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("listening on :%s", port)
-	if err := http.ListenAndServe(":"+port, r); err != nil {
-		log.Fatalf("server: %v", err)
+
+	// S2: graceful shutdown — handle SIGINT/SIGTERM for in-flight requests.
+	go func() {
+		if err := e.Start(":" + port); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		log.Fatalf("server shutdown: %v", err)
 	}
+	log.Println("server stopped")
 }

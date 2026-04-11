@@ -1,17 +1,14 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5"
+	"github.com/labstack/echo/v4"
 )
 
 // Customer maps to the customers table (baseline schema).
-// After migration 009 this struct must be split into FirstName/LastName.
 type Customer struct {
 	ID        int       `json:"id"`
 	Name      string    `json:"name"`
@@ -19,76 +16,72 @@ type Customer struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func (h *Handler) ListCustomers(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.db.Query(r.Context(),
-		`SELECT id, name, email, created_at FROM customers ORDER BY id`)
+func (h *Handler) ListCustomers(c echo.Context) error {
+	limit, offset := parsePagination(c)
+	rows, err := h.db.Query(c.Request().Context(),
+		`SELECT id, name, email, created_at FROM customers ORDER BY id LIMIT $1 OFFSET $2`,
+		limit, offset)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to list customers"})
 	}
 	defer rows.Close()
 
 	customers := []Customer{}
 	for rows.Next() {
-		var c Customer
-		if err := rows.Scan(&c.ID, &c.Name, &c.Email, &c.CreatedAt); err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
-			return
+		var cu Customer
+		if err := rows.Scan(&cu.ID, &cu.Name, &cu.Email, &cu.CreatedAt); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to scan customer"})
 		}
-		customers = append(customers, c)
+		customers = append(customers, cu)
 	}
 	if err := rows.Err(); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to iterate customers"})
 	}
-	writeJSON(w, http.StatusOK, customers)
+	return c.JSON(http.StatusOK, customers)
 }
 
-func (h *Handler) GetCustomer(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+func (h *Handler) GetCustomer(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid id")
-		return
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid id"})
 	}
 
-	var c Customer
-	err = h.db.QueryRow(r.Context(),
+	var cu Customer
+	err = h.db.QueryRow(c.Request().Context(),
 		`SELECT id, name, email, created_at FROM customers WHERE id = $1`, id).
-		Scan(&c.ID, &c.Name, &c.Email, &c.CreatedAt)
+		Scan(&cu.ID, &cu.Name, &cu.Email, &cu.CreatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			writeError(w, http.StatusNotFound, "customer not found")
-			return
+		if isNotFound(err) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "customer not found"})
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to get customer"})
 	}
-	writeJSON(w, http.StatusOK, c)
+	return c.JSON(http.StatusOK, cu)
 }
 
-func (h *Handler) CreateCustomer(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateCustomer(c echo.Context) error {
 	var body struct {
 		Name  string `json:"name"`
 		Email string `json:"email"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid JSON")
-		return
+	if err := c.Bind(&body); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 	}
 	if body.Name == "" || body.Email == "" {
-		writeError(w, http.StatusUnprocessableEntity, "name and email required")
-		return
+		return c.JSON(http.StatusUnprocessableEntity, map[string]string{"error": "name and email required"})
+	}
+	if !isValidEmail(body.Email) {
+		return c.JSON(http.StatusUnprocessableEntity, map[string]string{"error": "invalid email format"})
 	}
 
-	var c Customer
-	err := h.db.QueryRow(r.Context(), `
+	var cu Customer
+	err := h.db.QueryRow(c.Request().Context(), `
 		INSERT INTO customers (name, email) VALUES ($1, $2)
 		RETURNING id, name, email, created_at`,
 		body.Name, body.Email).
-		Scan(&c.ID, &c.Name, &c.Email, &c.CreatedAt)
+		Scan(&cu.ID, &cu.Name, &cu.Email, &cu.CreatedAt)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create customer"})
 	}
-	writeJSON(w, http.StatusCreated, c)
+	return c.JSON(http.StatusCreated, cu)
 }

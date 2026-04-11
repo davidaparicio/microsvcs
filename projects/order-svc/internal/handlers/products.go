@@ -1,17 +1,14 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5"
+	"github.com/labstack/echo/v4"
 )
 
 // Product maps to the products table.
-// After migration 008 a CHECK(stock >= 0) constraint is added.
 type Product struct {
 	ID        int       `json:"id"`
 	SKU       string    `json:"sku"`
@@ -21,12 +18,13 @@ type Product struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func (h *Handler) ListProducts(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.db.Query(r.Context(),
-		`SELECT id, sku, name, price, stock, created_at FROM products ORDER BY id`)
+func (h *Handler) ListProducts(c echo.Context) error {
+	limit, offset := parsePagination(c)
+	rows, err := h.db.Query(c.Request().Context(),
+		`SELECT id, sku, name, price, stock, created_at FROM products ORDER BY id LIMIT $1 OFFSET $2`,
+		limit, offset)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to list products"})
 	}
 	defer rows.Close()
 
@@ -34,65 +32,63 @@ func (h *Handler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var p Product
 		if err := rows.Scan(&p.ID, &p.SKU, &p.Name, &p.Price, &p.Stock, &p.CreatedAt); err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
-			return
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to scan product"})
 		}
 		products = append(products, p)
 	}
 	if err := rows.Err(); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to iterate products"})
 	}
-	writeJSON(w, http.StatusOK, products)
+	return c.JSON(http.StatusOK, products)
 }
 
-func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+func (h *Handler) GetProduct(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid id")
-		return
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid id"})
 	}
 
 	var p Product
-	err = h.db.QueryRow(r.Context(),
+	err = h.db.QueryRow(c.Request().Context(),
 		`SELECT id, sku, name, price, stock, created_at FROM products WHERE id = $1`, id).
 		Scan(&p.ID, &p.SKU, &p.Name, &p.Price, &p.Stock, &p.CreatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			writeError(w, http.StatusNotFound, "product not found")
-			return
+		if isNotFound(err) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "product not found"})
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to get product"})
 	}
-	writeJSON(w, http.StatusOK, p)
+	return c.JSON(http.StatusOK, p)
 }
 
-func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateProduct(c echo.Context) error {
 	var body struct {
 		SKU   string  `json:"sku"`
 		Name  string  `json:"name"`
 		Price float64 `json:"price"`
 		Stock int     `json:"stock"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid JSON")
-		return
+	if err := c.Bind(&body); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 	}
 	if body.SKU == "" || body.Name == "" {
-		writeError(w, http.StatusUnprocessableEntity, "sku and name required")
-		return
+		return c.JSON(http.StatusUnprocessableEntity, map[string]string{"error": "sku and name required"})
+	}
+	if body.Price < 0 {
+		return c.JSON(http.StatusUnprocessableEntity, map[string]string{"error": "price must not be negative"})
+	}
+	if body.Stock < 0 {
+		return c.JSON(http.StatusUnprocessableEntity, map[string]string{"error": "stock must not be negative"})
 	}
 
 	var p Product
-	err := h.db.QueryRow(r.Context(), `
+	err := h.db.QueryRow(c.Request().Context(), `
 		INSERT INTO products (sku, name, price, stock) VALUES ($1, $2, $3, $4)
 		RETURNING id, sku, name, price, stock, created_at`,
 		body.SKU, body.Name, body.Price, body.Stock).
 		Scan(&p.ID, &p.SKU, &p.Name, &p.Price, &p.Stock, &p.CreatedAt)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create product"})
 	}
-	writeJSON(w, http.StatusCreated, p)
+	return c.JSON(http.StatusCreated, p)
 }
