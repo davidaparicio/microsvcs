@@ -1,0 +1,75 @@
+webMcpService:
+  type: NodePort
+  ports:
+    - name: http
+      port: 8090
+      protocol: TCP
+      targetPort: 8090
+      nodePort: 31446
+
+config:
+  configYaml: |-
+    sources:
+      service:
+        enabled: true
+        namespace: ""
+        annotationFilter: ""
+        serviceTypeFilter:
+          - LoadBalancer
+          - ExternalName
+          - ClusterIP
+        publishInternal: true
+        publishHostIP: false
+      ingress:
+        enabled: true
+        namespace: ""
+        ingressClassNames: []
+      dnsEndpoint:
+        enabled: false
+        namespace: ""
+      istioGateway:
+        enabled: false
+        namespace: ""
+      istioVirtualService:
+        enabled: false
+        namespace: ""
+      gatewayHTTPRoute:
+        enabled: false
+        namespace: ""
+        gatewayName: ""
+        gatewayNamespace: ""
+        gatewayLabelFilter: ""
+      gatewayGRPCRoute:
+        enabled: false
+        namespace: ""
+      gatewayTLSRoute:
+        enabled: false
+        namespace: ""
+      gatewayTCPRoute:
+        enabled: false
+        namespace: ""
+      gatewayUDPRoute:
+        enabled: false
+        namespace: ""
+      priority:
+        - dnsendpoint
+        - gateway-httproute
+        - gateway-grpcroute
+        - gateway-tlsroute
+        - gateway-tcproute
+        - gateway-udproute
+        - ingress
+        - service
+    groupMapping:
+      defaultGroup: "Services"
+    reconciliation:
+      interval: 5m
+      retryOnError: 30s
+      disableDNSCheck: false
+    auth:
+      apiKey:
+        enabled: false
+        headerName: "X-API-Key"
+      jwt:
+        enabled: false
+        issuers: []

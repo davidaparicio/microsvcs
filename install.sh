@@ -220,13 +220,14 @@ echo ""
 
 # Install SRE Portal
 echo -e "${BLUE}🖥️  Installing SRE Portal ${SREPORTAL_CHART_VERSION}...${NC}"
+# The chart bundles a ServiceMonitor — install the CRD so helm doesn't fail
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml 2>/dev/null || true
 helm upgrade --install sreportal \
   oci://ghcr.io/golgoth31/sreportal/charts/sreportal \
   --version "${SREPORTAL_CHART_VERSION}" \
-  --namespace sreportal \
+  --namespace sreportal-system \
   --create-namespace \
-  --set webMcpService.type=NodePort \
-  --set 'webMcpService.ports[0].nodePort=31446' \
+  -f k8s/sreportal-values.yaml \
   --wait
 echo -e "  ${GREEN}✅${NC} SRE Portal installed"
 echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31446"
