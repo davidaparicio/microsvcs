@@ -22,10 +22,10 @@ fi
 
 # Version configuration
 ARGO_CD_CHART_VERSION=8.1.4
-ARGO_ROLLOUTS_CHART_VERSION=2.40.1
-CERT_MANAGER_CHART_VERSION=v1.18.2
-KARGO_VERSION="1.8.9"  # latest or specify version like v0.8.0
-INGRESS_NGINX_VERSION=v1.14.2
+ARGO_ROLLOUTS_CHART_VERSION=2.40.9
+CERT_MANAGER_CHART_VERSION=v1.20.1
+KARGO_VERSION="1.9.5"  # latest or specify version like v0.8.0
+INGRESS_NGINX_VERSION=v1.15.1
 
 # Configuration
 CLUSTER_NAME="microsvcs"
@@ -197,9 +197,10 @@ echo -e "  ${GREEN}✅${NC} Argo Rollouts installed"
 echo ""
 
 # Install Kargo
-echo -e "${BLUE}📦 Installing Kargo...${NC}"
+echo -e "${BLUE}📦 Installing Kargo ${KARGO_VERSION}...${NC}"
 helm upgrade --install kargo \
   oci://ghcr.io/akuity/kargo-charts/kargo \
+  --version "${KARGO_VERSION}" \
   --namespace kargo \
   --create-namespace \
   --set api.service.type=NodePort \
