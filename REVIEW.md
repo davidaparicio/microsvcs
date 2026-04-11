@@ -224,3 +224,125 @@ startupProbe:
 1. **Security contexts on deployments** — highest impact, lowest effort
 2. **Extract shared Go code** — the 4x duplication is the biggest maintenance risk
 3. **Fix the git-sync ArgoCD gap** — it's a broken pipeline nobody will notice until a promotion fails
+
+---
+
+## Refactoring Opportunities: Code Duplication
+
+**Date:** 2026-04-11
+
+### Duplication Landscape
+
+| Area | Duplicated Lines | Type | Notes |
+|------|-----------------|------|-------|
+| Go source (`internal/`, `webcolor_ff.go`) | ~937 | Mechanical | `internal/name`, `internal/version` 100% identical; `webcolor_ff.go` differs (red has metrics) |
+| Makefiles | ~656 | Mechanical | Only version/package paths differ |
+| Dockerfiles | ~144 | Mechanical | Only import paths differ |
+| K8s overlays (dev/staging/prod) | ~480 | Mechanical | Only namespace/image/hostname differ |
+| Kargo (generated) | ~730 | Generated | Already templated via `generate.sh` — least urgent |
+| **Total** | **~3,300** | — | ~2,200 manual + ~730 generated |
+
+GitHub Actions CI and ArgoCD ApplicationSet are already DRY. Kargo uses templates + generation. The problem is concentrated in **Go code, build files, and K8s overlays**.
+
+### Proposition 1 — Extract shared Go packages (low risk, high value)
+
+`internal/name/` and `internal/version/` are byte-for-byte identical across all 4 color services. Move them to a top-level `pkg/name/` and `pkg/version/` module. Each service imports from the shared location instead of owning a copy.
+
+`webcolor_ff.go` is trickier — blue/green/yellow are identical, red adds ~73 lines of metrics. Extract a shared `pkg/webcolor/` with the common logic, and have red compose on top.
+
+- **Effort**: small
+- **Risk**: low — just import path changes
+- **Saves**: ~250 lines of identical Go code, plus future drift prevention
+
+### Proposition 2 — Single root Makefile with per-service targets (medium risk, medium value)
+
+Replace 4 identical Makefiles with one root `Makefile` that takes `PROJECT=red` as a parameter (or auto-discovers from directory). Each `projects/<color>/` keeps a thin 3-line Makefile that delegates to the root.
+
+Same approach for Dockerfiles — a single `Dockerfile.template` with build args.
+
+- **Effort**: medium
+- **Risk**: medium — CI references `make` per-service today
+- **Saves**: ~800 lines, simplifies "fix in one must be replicated to all four"
+
+### Proposition 3 — Consolidate K8s overlays with Kustomize components (medium risk, medium value)
+
+The dev/staging/prod overlays for each service are copy-paste with name substitution. Kustomize `components` or a shared overlay base with per-service `namePrefix` and vars could collapse this. Needs careful testing since ArgoCD watches these paths.
+
+- **Effort**: medium
+- **Risk**: medium — ArgoCD sync paths and Kargo git commits target specific overlay directories
+- **Saves**: ~480 lines
+
+### Proposition 4 — Copier template engine (evaluated, prototype in [#147](https://github.com/davidaparicio/microsvcs/pull/147))
+
+[Copier](https://github.com/copier-org/copier) is a project templating tool with a native **update mechanism** — it propagates template changes to already-generated projects via 3-way merge, preserving per-project customizations. That's exactly the "fix in one must be replicated to all four" problem.
+
+A Copier template for the color services would look like:
+
+```text
+template/
+├── copier.yml              # questions: color, has_metrics, config_path...
+├── webcolor_ff.go.jinja
+├── internal/name/name.go
+├── internal/version/version.go
+├── Makefile.jinja
+└── docker/Dockerfile.jinja
+```
+
+**PR [#147](https://github.com/davidaparicio/microsvcs/pull/147)** (`claude/reduce-duplication-copier-eVqcG`) is an open prototype implementing this approach with two templates:
+
+- **`copier-microservice-template/`** — renders `Makefile`, `Dockerfile`, `.dockerignore`, and `go.mod` from a single parameterized source (8 questions: service name, org, module root, Go version, etc.)
+- **`copier-k8s-overlay-template/`** — generates all three kustomization.yaml overlays (dev/staging/prod) per service from one template (5 questions: service name, domain suffix, image tags per env)
+
+The PR also extracts a shared `projects/Makefile.common` (173 lines) and reduces each service Makefile from ~165 lines to a 5-line stub with `include` — a **73% reduction** (660 -> 180 lines). Each service gets a `.copier-answers.yml`, and K8s overlays get per-service `.copier-answers-<color>.yml` files.
+
+**What the PR covers:**
+
+| Area | Before | After |
+|------|--------|-------|
+| Makefiles | 4 x 165 lines (copy-paste) | 1 x 173 (common) + 4 x 5 (stubs) |
+| Dockerfiles | 4 x 36 lines (copy-paste) | Jinja template + answers |
+| K8s overlays | Copy-paste per env per service | Template + per-service answers |
+
+**What the PR does NOT cover:** Go source files (`webcolor_ff.go`, `internal/`) — the highest-value duplication remains untouched.
+
+**Pros:**
+
+- Solves the propagation problem directly — fix shared logic once, run `copier update` per service
+- Handles the "95% identical, 5% different" case well via Jinja conditionals (red's metrics block)
+- Each service gets a `.copier-answers.yml` tracking which template version it was generated from
+- **Proven by prototype** — PR #147 demonstrates the approach works for Makefiles and K8s overlays
+
+**Cons:**
+
+- **Adds a generation step to a monorepo** — the template becomes the source of truth, editing generated Go files directly is now wrong. Every contributor must learn this workflow change.
+- **Overkill for identical files** — `internal/name/` and `internal/version/` are byte-for-byte identical. A shared `pkg/` import (proposition 1) solves this with zero tooling.
+- **Jinja in Go files breaks IDE support** — no syntax highlighting, no `gopls`, no `go vet` on `.go.jinja` templates.
+- **Merge conflicts on direct edits** — if someone edits a generated file (and they will), `copier update` creates `.rej` files, adding a resolution workflow on top of git.
+- **Yet another tool** — the stack is already Go + Kustomize + ArgoCD + Kargo + Kind + GitHub Actions. Adding a Python-based templating tool for 4 services is a high tool-to-service ratio.
+
+**Verdict1:** The Makefile.common extraction in PR #147 is valuable regardless of Copier adoption (proposition 2 achieves the same). The Copier layer on top is the right tool for **many independent repos** generated from a common template (e.g., 50 microservices across separate git repos). For 4 services in a monorepo, native Go modules + parameterized Makefiles (propositions 1-2) give 90% of the benefit with zero new tooling. **Keep Copier in the back pocket** for if/when the repo grows to 10+ services or spawns separate repos.
+
+**Verdict2: Copier doesn't earn its complexity at this scale.** Here's what it's actually templating vs what already has native solutions:
+
+| Templated by Copier | Native alternative | Winner |
+|----------------------|--------------------|--------|
+| Makefiles (5-line stubs) | `Makefile.common` + `include` — no template engine needed | Native |
+| Dockerfiles (1 line differs) | Single `Dockerfile` with `--build-arg SERVICE=red` | Native |
+| `go.mod` | Should diverge per service as deps evolve — templating fights Go modules | Native |
+| K8s overlays | Kustomize components solve this without a second templating layer | Native |
+| Go source files | **Not covered by PR #147** — and this is where Jinja works worst (breaks IDE) | N/A |
+
+Copier adds a Python dependency, `.copier-answers.yml` in every directory, a new contributor workflow, and `.rej` file resolution — to template files that either have simpler native solutions or aren't being templated at all.
+
+**Actionable outcome for PR [#147](https://github.com/davidaparicio/microsvcs/pull/147):**
+
+1. **Cherry-pick commit `e4c5496`** (`Makefile.common` extraction) — that's solid, standalone work worth merging
+2. **Close the rest of the PR** as superseded by propositions 1-2
+3. **Revisit Copier** if service count hits 10+ or services move to separate repos
+
+### Recommended Order
+
+1. **Proposition 1** first — safest, most impactful, directly addresses the known issue of "a fix in one must be replicated to all four"
+2. **Proposition 2** next — cherry-pick `Makefile.common` from PR #147, add `Dockerfile` build args
+3. **Proposition 3** last — highest blast radius (ArgoCD + Kargo path dependencies), defer until 1 and 2 are stable
+4. **Proposition 4** — deferred. Copier is a scaling tool, and 4 services in a monorepo isn't the scale where it earns its complexity
