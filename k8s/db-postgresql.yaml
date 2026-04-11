@@ -1,0 +1,146 @@
+# ---
+# # ❯ kubectl get storageclass
+# # NAME                 PROVISIONER          RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+# # hostpath (default)   docker.io/hostpath   Delete          Immediate           false                  8d
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: hostpath
+# provisioner: kubernetes.io/no-provisioner
+# volumeBindingMode: WaitForFirstConsumer
+
+# kubectl exec -it $POD_NAME -n pg -- psql -h localhost -U postgres --password -p 5432 keycloak
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: ""
+  labels:
+    app.kubernetes.io/instance: pg
+    app.kubernetes.io/name: pg
+  name: pg
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgresql-pv
+  labels:
+    type: local
+    app: postgres
+spec:
+  storageClassName: "hostpath" #"standard"
+  capacity:
+    storage: 2Gi #10Gi
+  accessModes:
+    - ReadWriteOnce # ReadWriteMany
+  hostPath:
+    path: "/data/postgresql" # Directory on your local machine
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-pg-pvc
+  namespace: pg
+  labels:
+    app: postgres
+spec:
+  storageClassName: "hostpath" # Use the storage class defined earlier
+  accessModes:
+    - ReadWriteOnce # ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-postgres-secret
+  namespace: pg
+  labels:
+    app: postgres
+type: Opaque
+data:
+  # echo -n 'apppassword' | base64
+  password: YXBwcGFzc3dvcmQ=
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-postgres
+  namespace: pg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-postgres
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: app-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:18.3-alpine
+        #14 https://hub.docker.com/_/postgres/
+        env:
+        - name: POSTGRES_DB
+          value: app
+        - name: POSTGRES_USER
+          value: app
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-postgres-secret
+              key: password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 250m
+          limits:
+            memory: 512Mi
+            cpu: 500m
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - app
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - app
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        ports:
+        - containerPort: 5432
+        securityContext:
+          privileged: false
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-storage
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: app-pg-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-postgres
+  namespace: pg
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: app-postgres
+  #type: ClusterIP
