@@ -26,7 +26,6 @@ ARGO_ROLLOUTS_CHART_VERSION=2.40.9
 CERT_MANAGER_CHART_VERSION=v1.20.1
 KARGO_VERSION="1.9.5"  # latest or specify version like v0.8.0
 INGRESS_NGINX_VERSION=v1.15.1
-SREPORTAL_CHART_VERSION="1.26.2"
 
 # Configuration
 CLUSTER_NAME="microsvcs"
@@ -67,7 +66,6 @@ while [[ $# -gt 0 ]]; do
             echo "  - Argo Rollouts ${ARGO_ROLLOUTS_CHART_VERSION}"
             echo "  - Kargo ${KARGO_VERSION}"
             echo "  - Ingress NGINX ${INGRESS_NGINX_VERSION}"
-            echo "  - SRE Portal ${SREPORTAL_CHART_VERSION}"
             echo ""
             echo "Credentials:"
             echo "  ArgoCD:  admin / admin"
@@ -216,21 +214,6 @@ helm upgrade --install kargo \
   --wait
 echo -e "  ${GREEN}✅${NC} Kargo installed"
 echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31444 (admin/admin)"
-echo ""
-
-# Install SRE Portal
-echo -e "${BLUE}🖥️  Installing SRE Portal ${SREPORTAL_CHART_VERSION}...${NC}"
-# The chart bundles a ServiceMonitor — install the CRD so helm doesn't fail
-kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml 2>/dev/null || true
-helm upgrade --install sreportal \
-  oci://ghcr.io/golgoth31/sreportal/charts/sreportal \
-  --version "${SREPORTAL_CHART_VERSION}" \
-  --namespace sreportal-system \
-  --create-namespace \
-  -f k8s/sreportal-values.yaml \
-  --wait
-echo -e "  ${GREEN}✅${NC} SRE Portal installed"
-echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31446"
 echo ""
 
 # Apply ArgoCD resources
@@ -387,9 +370,8 @@ echo ""
 echo -e "${GREEN}🎉 Setup Complete!${NC}"
 echo ""
 echo "Access Points:"
-echo -e "  ${BLUE}ArgoCD:${NC}      http://localhost:31443 (admin/admin)"
-echo -e "  ${BLUE}Kargo:${NC}       http://localhost:31444 (admin/admin)"
-echo -e "  ${BLUE}SRE Portal:${NC}  http://localhost:31446"
+echo -e "  ${BLUE}ArgoCD:${NC}  http://localhost:31443 (admin/admin)"
+echo -e "  ${BLUE}Kargo:${NC}   http://localhost:31444 (admin/admin)"
 echo ""
 echo "Next Steps:"
 echo "  1. Access ArgoCD to verify applications are synced"

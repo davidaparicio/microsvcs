@@ -57,11 +57,10 @@ Full platform:
 
 ## Local Dashboards
 
-| Tool       | URL                      | Credentials |
-|------------|--------------------------|-------------|
-| ArgoCD     | http://localhost:31443   | admin/admin |
-| Kargo      | http://localhost:31444   | admin/admin |
-| SRE Portal | http://localhost:31446   | —           |
+| Tool    | URL                      | Credentials |
+|---------|--------------------------|-------------|
+| ArgoCD  | http://localhost:31443   | admin/admin |
+| Kargo   | http://localhost:31444   | admin/admin |
 
 ## Kargo Config
 
