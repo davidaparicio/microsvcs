@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.1](https://github.com/davidaparicio/microsvcs/compare/red/3.4.0...red/3.4.1) (2026-02-17)
+
+
+### Bug Fixes
+
+* **red:** remove animations ([#139](https://github.com/davidaparicio/microsvcs/issues/139)) ([e1c0f76](https://github.com/davidaparicio/microsvcs/commit/e1c0f766dc77ff51a1b1da33024d6fd43e632ce1))
+
 ## [3.4.0](https://github.com/davidaparicio/microsvcs/compare/red/3.3.0...red/3.4.0) (2026-01-30)
 
 

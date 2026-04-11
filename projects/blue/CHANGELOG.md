@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.2](https://github.com/davidaparicio/microsvcs/compare/blue/3.3.1...blue/3.3.2) (2026-02-17)
+
+
+### Bug Fixes
+
+* **colors:** color distribution ([#137](https://github.com/davidaparicio/microsvcs/issues/137)) ([0ef2a60](https://github.com/davidaparicio/microsvcs/commit/0ef2a60bd8490270835564d8290419f4802f14ec))
+
 ## [3.3.1](https://github.com/davidaparicio/microsvcs/compare/blue/3.3.0...blue/3.3.1) (2026-01-30)
 
 

@@ -11,7 +11,7 @@ commonLabels:
 images:
 - name: quay.io/davidaparicio/app
   newName: quay.io/davidaparicio/yellow
-  newTag: 3.3.1
+  newTag: 3.3.2
 replicas:
 - name: app
   count: 2

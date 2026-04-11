@@ -19,6 +19,16 @@ This project demonstrates a complete CI/CD pipeline for microservices with:
 - 🛡️ **Safe Rollbacks**: Git-based rollback via `git revert` or Kargo promotion history
 - 📊 **Template-Driven**: Add new services quickly using configuration templates
 
+### Projects
+
+Interesting projects from [Dockerlabs](https://github.com/collabnix/dockerlabs):
+* [webcolor](https://github.com/jpetazzo/color) from [Jérôme Petazzoni](https://github.com/jpetazzo)
+* [Dockercoins v2](https://github.com/jpetazzo/container.training/tree/main/dockercoins), classic [Dockercoins](https://github.com/dockersamples/dockercoins/)
+* [Voting-App](https://github.com/dockersamples/example-voting-app) with the [documentation](https://dockerlabs.collabnix.com/play-with-docker/example-voting-app/)
+  * used in the [Docker BirthDay 2021](https://bday2021.play-with-docker.com/) like [Voting-App](https://bday2021.play-with-docker.com/voting-app/), thanks to [PWD / play-with-docker](https://labs.play-with-docker.com/)
+* [salaboy/pizza](https://github.com/salaboy/pizza), the Cloud-Native Pizza Store, a fork of [pizza-quarkus](https://github.com/mcruzdev/pizza-quarkus)|[quarkus-dapr?](https://github.com/salaboy/quarkus-dapr) with [Testcontainers](https://testcontainers.com/)/[Dapr](https://dapr.io/)/[Microcks](https://microcks.io/) like the video ["Simplifier les tests d'applications cloud natives avec Dapr et Microcks - Laurent Broudoux"](https://youtu.be/jKl8xOtTP1I), [Accélérer vos livraisons d'API avec Microcks DevoxxFR23](https://youtu.be/3qLzj2rTFmA)
+* [salaboy/pizza-vibe](https://github.com/salaboy/pizza-vibe), the same Cloud-Native Pizza Store, but vibecoded in Go
+
 ## Quick Start
 
 ### Prerequisites
@@ -79,15 +89,15 @@ curl http://red.dev.127.0.0.1.nip.io
                     ┌───────────────────────────────┘
                     │ Kargo detects new image
                     v
-            ┌───────────────────┐
-            │ Kargo Stages      │
-            │                   │
-            │ Development ✓ AUTO│ sha-* tags, newest build
-            │     ↓             │
-            │ Staging ✓ AUTO   │ semver tags, auto-promote
-            │     ↓             │
+            ┌────────────────────┐
+            │ Kargo Stages       │
+            │                    │
+            │ Development ✓ AUTO │ sha-* tags, newest build
+            │     ↓              │
+            │ Staging ✓ AUTO     │ semver tags, auto-promote
+            │     ↓              │
             │ Production ⏸ MANUAL│ manual approval required
-            └────────┬──────────┘
+            └────────┬───────────┘
                      │ Commits to git: [env] service use tag
                      v
             ┌───────────────────┐     ┌─────────────────┐

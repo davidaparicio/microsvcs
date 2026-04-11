@@ -22,8 +22,8 @@ color-box:
   defaultRule:
     # Distribute colors across all users with percentage splits
     percentage:
-      green_var: 100
-      default_var: 0
+      green_var: 50
+      default_var: 50
       # red_var: 15
       # orange_var: 10
       # yellow_var: 10
