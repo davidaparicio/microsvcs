@@ -5,7 +5,8 @@ nodes:
 - role: control-plane
   # Use a specific Kubernetes version for testing
   # https://hub.docker.com/r/kindest/node/tags
-  image: kindest/node:v1.35.0 # v1.34.3
+  # https://github.com/kubernetes/kubernetes/releases
+  image: kindest/node:v1.35.1 # v1.34.3
   extraPortMappings:
   - containerPort: 30080 # ingress-nginx controller HTTP
     hostPort: 30080
