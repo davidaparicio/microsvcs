@@ -159,6 +159,7 @@ jobs:
 
           # Dev builds get sha-prefixed tags (matched by Kargo dev warehouse: ^sha-.*)
           TAGS="$REGISTRY/$NAMESPACE/$PROJECT:sha-$SHA"
+          TAGS="$TAGS"$'\n'"$REGISTRY/$NAMESPACE/$PROJECT:latest"
 
           # Release builds get semver tags (matched by Kargo releases warehouse: SemVer)
           if [ "$IS_RELEASE" == "true" ]; then
@@ -260,6 +261,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
             echo "- \`$NAMESPACE/$PROJECT:$VERSION\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`$NAMESPACE/$PROJECT:latest\`" >> $GITHUB_STEP_SUMMARY
             echo "- \`$NAMESPACE/$PROJECT:sha-$SHA\`" >> $GITHUB_STEP_SUMMARY
           else
             echo "**Build Type:** Development" >> $GITHUB_STEP_SUMMARY
@@ -267,6 +269,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
             echo "- \`$NAMESPACE/$PROJECT:sha-$SHA\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`$NAMESPACE/$PROJECT:latest\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Kargo will detect this image and promote to DEV automatically." >> $GITHUB_STEP_SUMMARY
           fi
