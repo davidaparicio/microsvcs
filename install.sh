@@ -26,6 +26,7 @@ ARGO_ROLLOUTS_CHART_VERSION=2.40.9
 CERT_MANAGER_CHART_VERSION=v1.20.1
 KARGO_VERSION="1.9.5"  # latest or specify version like v0.8.0
 INGRESS_NGINX_VERSION=v1.15.1
+SREPORTAL_CHART_VERSION="1.26.2"
 
 # Configuration
 CLUSTER_NAME="microsvcs"
@@ -66,6 +67,7 @@ while [[ $# -gt 0 ]]; do
             echo "  - Argo Rollouts ${ARGO_ROLLOUTS_CHART_VERSION}"
             echo "  - Kargo ${KARGO_VERSION}"
             echo "  - Ingress NGINX ${INGRESS_NGINX_VERSION}"
+            echo "  - SRE Portal ${SREPORTAL_CHART_VERSION}"
             echo ""
             echo "Credentials:"
             echo "  ArgoCD:  admin / admin"
@@ -166,6 +168,7 @@ echo ""
 
 # Install ArgoCD
 echo -e "${BLUE}🚀 Installing ArgoCD ${ARGO_CD_CHART_VERSION}...${NC}"
+# shellcheck disable=SC2016
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
   --version "${ARGO_CD_CHART_VERSION}" \
@@ -198,6 +201,7 @@ echo ""
 
 # Install Kargo
 echo -e "${BLUE}📦 Installing Kargo ${KARGO_VERSION}...${NC}"
+# shellcheck disable=SC2016
 helm upgrade --install kargo \
   oci://ghcr.io/akuity/kargo-charts/kargo \
   --version "${KARGO_VERSION}" \
@@ -212,6 +216,20 @@ helm upgrade --install kargo \
   --wait
 echo -e "  ${GREEN}✅${NC} Kargo installed"
 echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31444 (admin/admin)"
+echo ""
+
+# Install SRE Portal
+echo -e "${BLUE}🖥️  Installing SRE Portal ${SREPORTAL_CHART_VERSION}...${NC}"
+helm upgrade --install sreportal \
+  oci://ghcr.io/golgoth31/sreportal/charts/sreportal \
+  --version "${SREPORTAL_CHART_VERSION}" \
+  --namespace sreportal \
+  --create-namespace \
+  --set webMcpService.type=NodePort \
+  --set 'webMcpService.ports[0].nodePort=31446' \
+  --wait
+echo -e "  ${GREEN}✅${NC} SRE Portal installed"
+echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31446"
 echo ""
 
 # Apply ArgoCD resources
@@ -293,30 +311,28 @@ if [[ "$SKIP_WAIT" == false ]]; then
     echo "   This may take several minutes..."
 
     for service in "${SERVICES[@]}"; do
-        for env in development; do # "${ENVIRONMENTS[@]}";
-            app="${service}-${env}"
-            echo -n "   • ${app}: "
-            timeout=600
-            elapsed=0
-            sync_status=""
-            health_status=""
-            while [[ "$elapsed" -lt "$timeout" ]]; do
-                sync_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.sync.status}' 2>/dev/null)
-                health_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.health.status}' 2>/dev/null)
-                if [[ "$sync_status" == "Synced" ]] && [[ "$health_status" == "Healthy" ]]; then
-                    break
-                fi
-                sleep 5
-                elapsed=$((elapsed + 5))
-            done
+        app="${service}-development"
+        echo -n "   • ${app}: "
+        timeout=600
+        elapsed=0
+        sync_status=""
+        health_status=""
+        while [[ "$elapsed" -lt "$timeout" ]]; do
+            sync_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.sync.status}' 2>/dev/null)
+            health_status=$(kubectl -n argocd get "app/${app}" -o jsonpath='{.status.health.status}' 2>/dev/null)
             if [[ "$sync_status" == "Synced" ]] && [[ "$health_status" == "Healthy" ]]; then
-                echo -e "${GREEN}✅ synced & healthy${NC}"
-            elif [[ "$sync_status" == "Synced" ]]; then
-                echo -e "${YELLOW}⚠️  synced but ${health_status:-not healthy}${NC}"
-            else
-                echo -e "${RED}❌ ${sync_status:-unknown} / ${health_status:-unknown}${NC}"
+                break
             fi
+            sleep 5
+            elapsed=$((elapsed + 5))
         done
+        if [[ "$sync_status" == "Synced" ]] && [[ "$health_status" == "Healthy" ]]; then
+            echo -e "${GREEN}✅ synced & healthy${NC}"
+        elif [[ "$sync_status" == "Synced" ]]; then
+            echo -e "${YELLOW}⚠️  synced but ${health_status:-not healthy}${NC}"
+        else
+            echo -e "${RED}❌ ${sync_status:-unknown} / ${health_status:-unknown}${NC}"
+        fi
     done
     echo ""
 else
@@ -370,8 +386,9 @@ echo ""
 echo -e "${GREEN}🎉 Setup Complete!${NC}"
 echo ""
 echo "Access Points:"
-echo -e "  ${BLUE}ArgoCD:${NC}  http://localhost:31443 (admin/admin)"
-echo -e "  ${BLUE}Kargo:${NC}   http://localhost:31444 (admin/admin)"
+echo -e "  ${BLUE}ArgoCD:${NC}      http://localhost:31443 (admin/admin)"
+echo -e "  ${BLUE}Kargo:${NC}       http://localhost:31444 (admin/admin)"
+echo -e "  ${BLUE}SRE Portal:${NC}  http://localhost:31446"
 echo ""
 echo "Next Steps:"
 echo "  1. Access ArgoCD to verify applications are synced"

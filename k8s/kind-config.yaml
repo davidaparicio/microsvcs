@@ -18,6 +18,8 @@ nodes:
     hostPort: 31444
   - containerPort: 31445 # External webhooks server
     hostPort: 31445
+  - containerPort: 31446 # SRE Portal dashboard
+    hostPort: 31446
   - containerPort: 32080 # test application instance
     hostPort: 32080
   - containerPort: 32081 # UAT application instance
