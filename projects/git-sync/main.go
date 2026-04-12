@@ -89,6 +89,9 @@ func main() {
 	if err := e.Shutdown(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "Shutdown error: %v\n", err)
 	}
+	if err := syncer.Close(); err != nil {
+		fmt.Fprintf(os.Stderr, "Cleanup error: %v\n", err)
+	}
 }
 
 func healthzHandler(syncer *sync.Syncer) echo.HandlerFunc {

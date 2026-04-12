@@ -163,3 +163,7 @@ func (s *Syncer) IsHealthy() bool {
 	defer s.mu.RUnlock()
 	return s.healthy
 }
+
+func (s *Syncer) Close() error {
+	return s.git.Close()
+}

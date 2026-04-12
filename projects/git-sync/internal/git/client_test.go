@@ -18,4 +18,5 @@ func TestNewClient(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, client)
 	assert.NotEmpty(t, client.WorkDir())
+	t.Cleanup(func() { assert.NoError(t, client.Close()) })
 }

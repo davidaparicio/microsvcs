@@ -91,3 +91,12 @@ func (c *Client) getHeadCommit() (string, error) {
 func (c *Client) WorkDir() string {
 	return c.workDir
 }
+
+func (c *Client) Close() error {
+	if c.workDir == "" {
+		return nil
+	}
+	err := os.RemoveAll(c.workDir)
+	c.workDir = ""
+	return err
+}
