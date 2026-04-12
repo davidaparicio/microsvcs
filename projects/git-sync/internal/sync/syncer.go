@@ -65,7 +65,7 @@ func (s *Syncer) Sync(ctx context.Context) error {
 	s.healthy = true
 
 	fmt.Printf("[%s] Sync completed successfully (commit: %s)\n",
-		time.Now().Format(time.RFC3339), commit[:7])
+		time.Now().Format(time.RFC3339), commit[:min(7, len(commit))])
 
 	return nil
 }
