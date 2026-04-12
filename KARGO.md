@@ -148,12 +148,12 @@ kubectl create secret generic github-creds \
   --from-literal=password=<github-token>
 ```
 
-##### DockerHub Credentials
+##### Quay.io Credentials
 ```bash
-kubectl create secret generic dockerhub-creds \
+kubectl create secret generic quay-creds \
   --namespace microsvcs \
-  --from-literal=username=<dockerhub-username> \
-  --from-literal=password=<dockerhub-pat>
+  --from-literal=username=<quay-username> \
+  --from-literal=password=<quay-pat>
 ```
 
 ## Promotion Scenarios
@@ -395,23 +395,23 @@ Argo CD Application "xxx" does not permit mutation by Kargo Stage
    # Should output: microsvcs:blue-development
    ```
 
-### DockerHub Credentials Not Being Used
+### Quay.io Credentials Not Being Used
 
-If your DockerHub PAT shows no usage in the dashboard:
+If your Quay.io PAT shows no usage in the dashboard:
 
-1. Ensure the DockerHub credentials secret is created:
+1. Ensure the Quay.io credentials secret is created:
    ```bash
-   kubectl get secret dockerhub-creds -n microsvcs
+   kubectl get secret quay-creds -n microsvcs
    ```
 
 2. Check the secret has the correct labels and annotations:
    ```bash
-   kubectl get secret dockerhub-creds -n microsvcs -o yaml | grep "kargo.akuity.io"
+   kubectl get secret quay-creds -n microsvcs -o yaml | grep "kargo.akuity.io"
    ```
 
    Should show:
    - Label: `kargo.akuity.io/cred-type: image`
-   - Annotation: `kargo.akuity.io/repo-url-pattern: "docker.io/*"`
+   - Annotation: `kargo.akuity.io/repo-url-pattern: "quay.io/*"`
 
 3. If missing, apply the credentials:
    ```bash
