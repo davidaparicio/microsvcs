@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/davidaparicio/microsvcs/projects/git-sync/internal/config"
@@ -16,12 +17,13 @@ import (
 type Syncer struct {
 	cfg        *config.Config
 	git        *git.Client
-	mu         sync.RWMutex
+	syncMu     sync.Mutex   // prevents concurrent syncs; never held while health checks run
+	mu         sync.RWMutex // protects lastSync, lastCommit, syncCount, errorCount
 	lastSync   time.Time
 	lastCommit string
 	syncCount  int64
 	errorCount int64
-	healthy    bool
+	healthy    atomic.Bool // read lock-free so health probes never block
 }
 
 func NewSyncer(cfg *config.Config) (*Syncer, error) {
@@ -31,38 +33,46 @@ func NewSyncer(cfg *config.Config) (*Syncer, error) {
 	}
 
 	return &Syncer{
-		cfg:     cfg,
-		git:     gitClient,
-		healthy: false,
+		cfg: cfg,
+		git: gitClient,
 	}, nil
 }
 
 func (s *Syncer) Sync(ctx context.Context) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	// Prevent concurrent syncs without blocking health probes.
+	s.syncMu.Lock()
+	defer s.syncMu.Unlock()
 
 	fmt.Printf("[%s] Starting sync from %s (branch: %s)\n",
 		time.Now().Format(time.RFC3339), s.cfg.RepoURL, s.cfg.Branch)
 
-	// Clone or pull repository
+	// Clone or pull repository — long-running; no mu held here.
 	commit, err := s.git.Sync(ctx)
 	if err != nil {
+		s.mu.Lock()
 		s.errorCount++
-		s.healthy = false
+		s.mu.Unlock()
+		s.healthy.Store(false)
 		return fmt.Errorf("git sync failed: %w", err)
 	}
 
-	// Copy files from source path to target path
+	// Copy files from source path to target path — still no mu held.
 	if err := s.copyFiles(); err != nil {
+		s.mu.Lock()
 		s.errorCount++
-		s.healthy = false
+		s.mu.Unlock()
+		s.healthy.Store(false)
 		return fmt.Errorf("file copy failed: %w", err)
 	}
 
+	// Brief critical section: update status fields only.
+	s.mu.Lock()
 	s.lastSync = time.Now()
 	s.lastCommit = commit
 	s.syncCount++
-	s.healthy = true
+	s.mu.Unlock()
+
+	s.healthy.Store(true)
 
 	fmt.Printf("[%s] Sync completed successfully (commit: %s)\n",
 		time.Now().Format(time.RFC3339), commit[:7])
@@ -144,14 +154,18 @@ func copyFile(src, dst string) error {
 
 func (s *Syncer) GetStatus() map[string]any {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	lastSync := s.lastSync
+	lastCommit := s.lastCommit
+	syncCount := s.syncCount
+	errorCount := s.errorCount
+	s.mu.RUnlock()
 
 	return map[string]any{
-		"healthy":    s.healthy,
-		"lastSync":   s.lastSync,
-		"lastCommit": s.lastCommit,
-		"syncCount":  s.syncCount,
-		"errorCount": s.errorCount,
+		"healthy":    s.healthy.Load(),
+		"lastSync":   lastSync,
+		"lastCommit": lastCommit,
+		"syncCount":  syncCount,
+		"errorCount": errorCount,
 		"repoURL":    s.cfg.RepoURL,
 		"branch":     s.cfg.Branch,
 		"targetPath": s.cfg.TargetPath,
@@ -159,7 +173,5 @@ func (s *Syncer) GetStatus() map[string]any {
 }
 
 func (s *Syncer) IsHealthy() bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.healthy
+	return s.healthy.Load()
 }
