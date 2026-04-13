@@ -1,12 +1,12 @@
 module github.com/davidaparicio/microsvcs/projects/blue
 
-go 1.25.8
+go 1.25.9
 
 require (
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.15.1
 	github.com/stretchr/testify v1.11.1
-	github.com/thomaspoignant/go-feature-flag v1.52.0
+	github.com/thomaspoignant/go-feature-flag v1.52.1
 )
 
 require (
@@ -26,10 +26,10 @@ require (
 	github.com/thomaspoignant/go-feature-flag/modules/core v0.6.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/crypto v0.49.0 // indirect
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
-	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/crypto v0.50.0 // indirect
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
+	golang.org/x/net v0.53.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
