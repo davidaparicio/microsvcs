@@ -27,6 +27,9 @@ FROM scratch
 
 WORKDIR /app
 
+# Copy CA certificates for HTTPS connections
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
 # Copy the binary
 COPY --from=builder /app/app /app/app
 
