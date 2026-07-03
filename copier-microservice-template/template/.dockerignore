@@ -1,0 +1,20 @@
+# Documentation (doesn't affect binary)
+CHANGELOG.md
+README.md
+
+# Build tools (not needed in container)
+Makefile
+
+# Test artifacts
+*.test
+
+# Version control
+.git
+.github
+
+# IDE files
+.vscode
+.idea
+
+# Build output
+bin/
