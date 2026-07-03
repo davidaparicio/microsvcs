@@ -2,9 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: git-sync-production
 resources:
-- ../../../base/git-sync-deployment.yaml
-- ../../../base/git-sync-service.yaml
-- ../../../base/git-sync-ingress.yaml
+- ../../../base/git-sync
 namePrefix: git-sync-
 commonLabels:
   app.kubernetes.io/name: git-sync
