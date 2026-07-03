@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: blue-staging
 resources:
-- ../../../base
+- ../../../base/kustomization-bluegreen.yaml
 namePrefix: blue-
 commonLabels:
   app.kubernetes.io/name: blue
@@ -30,7 +30,7 @@ patches:
       path: /spec/template/spec/containers/0/resources/limits/cpu
       value: "250m"
   target:
-    kind: Deployment
+    kind: Rollout
 - patch: |-
     - op: replace
       path: /spec/rules/0/host

@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: app-health-check
+  labels:
+    app.kubernetes.io/name: app
+spec:
+  metrics:
+    - name: health-check
+      interval: 10s
+      count: 3
+      successCondition: result == "ok"
+      failureLimit: 1
+      provider:
+        web:
+          url: "http://{{args.service-name}}.{{args.namespace}}.svc.cluster.local/healthz"
+          jsonPath: "{$.status}"
+  args:
+    - name: service-name
+    - name: namespace
