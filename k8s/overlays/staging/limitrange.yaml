@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: namespace-limit-range
+  labels:
+    app.kubernetes.io/part-of: microsvcs
+spec:
+  limits:
+  - type: Container
+    default:
+      cpu: "250m"
+      memory: "128Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "64Mi"
+    max:
+      cpu: "500m"
+      memory: "256Mi"
+    min:
+      cpu: "25m"
+      memory: "32Mi"
+  - type: Pod
+    max:
+      cpu: "1"
+      memory: "512Mi"

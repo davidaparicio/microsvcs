@@ -3,6 +3,8 @@ kind: Kustomization
 namespace: yellow-production
 resources:
 - ../../../base
+- ../resourcequota.yaml
+- ../limitrange.yaml
 namePrefix: yellow-
 commonLabels:
   app.kubernetes.io/name: yellow
