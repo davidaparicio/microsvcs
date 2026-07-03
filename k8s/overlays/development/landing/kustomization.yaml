@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: landing-development
+resources:
+- ../../../base/landing
+commonLabels:
+  app.kubernetes.io/instance: landing-development
+  environment: development
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/rules/0/host
+      value: color.dev.127.0.0.1.nip.io
+  target:
+    kind: Ingress
