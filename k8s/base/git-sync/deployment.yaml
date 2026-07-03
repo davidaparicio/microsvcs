@@ -15,9 +15,21 @@ spec:
       labels:
         app.kubernetes.io/name: git-sync
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: app
           image: quay.io/davidaparicio/app:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8080
               protocol: TCP
@@ -37,6 +49,9 @@ spec:
           volumeMounts:
             - name: config-data
               mountPath: /data
+            # go-git clones into os.MkdirTemp (/tmp); required with readOnlyRootFilesystem
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               memory: "64Mi"
@@ -58,4 +73,6 @@ spec:
             periodSeconds: 10
       volumes:
         - name: config-data
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
