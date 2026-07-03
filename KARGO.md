@@ -248,6 +248,55 @@ kubectl get applications -n argocd red-production -o jsonpath='{.status.sync.sta
 5. Click **Promote** on the previous freight version
 6. Confirm rollback
 
+## Emergency Rollback Runbook
+
+If a production deployment causes issues, follow this procedure:
+
+### 1. Identify the Bad Deployment
+
+```bash
+# Check current freight on the affected stage
+kargo get freight --project microsvcs --stage <service>-production
+# Note the current freight name (e.g., abc123def) and the previous one (e.g., xyz789ghi)
+```
+
+### 2. Roll Back Immediately
+
+```bash
+# Promote the previous known-good freight
+kargo promote --project microsvcs --stage <service>-production --freight <previous-freight-id>
+```
+
+### 3. Verify the Rollback
+
+```bash
+# Watch promotion status until it succeeds
+kargo get promotions --project microsvcs --stage <service>-production --watch
+
+# Confirm ArgoCD sync is healthy
+kubectl get applications -n argocd <service>-production -o jsonpath='{.status.health.status}'
+
+# Confirm pods are running the expected image
+kubectl get pods -n <service>-production -o jsonpath='{.items[*].spec.containers[*].image}'
+```
+
+### 4. Roll Back All Services (if needed)
+
+```bash
+for service in red blue green yellow; do
+  PREV=$(kargo get freight --project microsvcs --stage ${service}-production -o json | jq -r '.items[1].metadata.name')
+  if [ -n "$PREV" ] && [ "$PREV" != "null" ]; then
+    kargo promote --project microsvcs --stage ${service}-production --freight "$PREV"
+    echo "Rolled back ${service}-production to freight $PREV"
+  fi
+done
+```
+
+### 5. Post-Incident
+
+- Investigate the root cause before re-promoting
+- The bad freight remains in history; do not re-promote it until the fix is verified in staging
+
 ## Useful Commands
 
 ```bash

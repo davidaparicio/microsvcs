@@ -56,13 +56,13 @@ if ! kubectl get namespace microsvcs &> /dev/null; then
 fi
 kubectl label namespace microsvcs kargo.akuity.io/project=true --overwrite &> /dev/null
 
-# Apply git credentials
+# Apply git credentials (whitelist only the required variables to prevent template injection)
 echo "- Applying GitHub credentials..."
-envsubst < "${SCRIPT_DIR}/git-credentials.yaml" | kubectl apply -f -
+envsubst '${GITHUB_USERNAME} ${GITHUB_PAT}' < "${SCRIPT_DIR}/git-credentials.yaml" | kubectl apply -f -
 
-# Apply Quay.io credentials
+# Apply Quay.io credentials (whitelist only the required variables to prevent template injection)
 echo "- Applying Quay.io credentials..."
-envsubst < "${SCRIPT_DIR}/quay-credentials.yaml" | kubectl apply -f -
+envsubst '${QUAY_USERNAME} ${QUAY_PAT}' < "${SCRIPT_DIR}/quay-credentials.yaml" | kubectl apply -f -
 
 echo "✓ Secrets applied successfully!"
 echo ""

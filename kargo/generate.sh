@@ -32,6 +32,12 @@ export DEV_AUTO_PROMOTE=$(yq -r '.environments[] | select(.name == "development"
 export STG_AUTO_PROMOTE=$(yq -r '.environments[] | select(.name == "staging") | .autoPromote' "$CONFIG")
 export PRD_AUTO_PROMOTE=$(yq -r '.environments[] | select(.name == "production") | .autoPromote' "$CONFIG")
 
+# Safety check: production auto-promotion must never be enabled
+if [[ "$PRD_AUTO_PROMOTE" == "true" ]]; then
+  echo "Error: production autoPromote must be false in config.yaml. Refusing to generate manifests with auto-promotion to production."
+  exit 1
+fi
+
 mapfile -t SERVICES < <(yq -r '.services[]' "$CONFIG")
 
 echo "Generating Kargo manifests for: ${SERVICES[*]}"
