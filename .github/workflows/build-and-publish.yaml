@@ -61,7 +61,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
@@ -105,7 +105,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Login to Quay.io
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
@@ -173,6 +173,42 @@ jobs:
           # Export image ref for signing (first tag)
           echo "primary_tag=$REGISTRY/$NAMESPACE/$PROJECT:sha-$SHA" >> $GITHUB_OUTPUT
 
+      # Build amd64 locally (no push) so the image can be scanned BEFORE anything
+      # is published. The multi-arch push below reuses this build via the gha cache.
+      - name: Build ${{ matrix.project }} for scan
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: projects/${{ matrix.project }}
+          file: projects/${{ matrix.project }}/docker/Dockerfile
+          push: false
+          load: true
+          tags: ${{ steps.tags.outputs.primary_tag }}
+          platforms: linux/amd64
+          build-args: |
+            VERSION=${{ steps.metadata.outputs.build_version }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            GIT_COMMIT=${{ github.sha }}
+          # Scope cache per project and ref to prevent cross-branch cache poisoning
+          cache-from: type=gha,scope=${{ matrix.project }}-${{ github.ref_name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.project }}-${{ github.ref_name }}
+
+      # Single scan acts as both the publish gate (exit-code 1) and the SARIF source
+      - name: Scan image for vulnerabilities (gate)
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.31.0
+        with:
+          image-ref: ${{ steps.tags.outputs.primary_tag }}
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@ce28f5bb42b7a9f2c824e633a3f6ee835bab6858 # v3.29.0
+        with:
+          sarif_file: 'trivy-results.sarif'
+
       - name: Build and push ${{ matrix.project }}
         id: build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
@@ -190,15 +226,6 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.project }}-${{ github.ref_name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.project }}-${{ github.ref_name }}
 
-      - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.31.0
-        with:
-          image-ref: ${{ steps.tags.outputs.primary_tag }}
-          format: table
-          exit-code: '1'
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-
       - name: Sign image with cosign (keyless)
         run: |
           IMAGE="${{ steps.tags.outputs.primary_tag }}"
@@ -213,26 +240,6 @@ jobs:
           subject-name: ${{ steps.tags.outputs.primary_tag }}
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
-
-      - name: Get scan image ref
-        id: scan-ref
-        run: |
-          # Extract first tag from the multi-line tags output
-          echo "ref=$(echo '${{ steps.tags.outputs.tags }}' | head -n1)" >> $GITHUB_OUTPUT
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # v0.30.0
-        with:
-          image-ref: ${{ steps.scan-ref.outputs.ref }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@ce28f5bb42b7a9f2c824e633a3f6ee835bab6858 # v3.29.0
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
 
       - name: Summary
         run: |

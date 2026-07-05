@@ -4,6 +4,7 @@
 ![Kargo](https://img.shields.io/badge/Kargo-1.8.9-green)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-1.31-326CE5?logo=kubernetes&logoColor=white)
 ![Go](https://img.shields.io/badge/Go-1.23-00ADD8?logo=go&logoColor=white)
+[![Plumber Score](https://score.getplumber.io/github.com/davidaparicio/microsvcs.svg)](https://score.getplumber.io/github.com/davidaparicio/microsvcs)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 
 A **GitOps-based microservices platform** with progressive deployment automation powered by ArgoCD and Kargo.

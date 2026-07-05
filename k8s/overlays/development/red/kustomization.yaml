@@ -46,6 +46,11 @@ patches:
       value:
         name: git-sync
         image: quay.io/davidaparicio/git-sync:latest
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
         env:
         - name: GIT_REPO_URL
           value: "https://github.com/davidaparicio/microsvcs.git"
@@ -62,6 +67,9 @@ patches:
         volumeMounts:
         - name: shared-config
           mountPath: /shared/config
+        # go-git clones into os.MkdirTemp (/tmp); required as non-root on a scratch image
+        - name: tmp
+          mountPath: /tmp
         resources:
           requests:
             memory: "32Mi"
@@ -85,6 +93,8 @@ patches:
       path: /spec/template/spec/volumes
       value:
         - name: shared-config
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
     - op: add
       path: /spec/template/spec/containers/0/volumeMounts
