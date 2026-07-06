@@ -16,7 +16,7 @@
 | 1. git-sync overlays fail kustomize load restrictor | ✅ Fixed (`bbeadaa`) — all 15 overlays render |
 | 2. Images pushed before blocking Trivy scan + duplicate Trivy steps | ✅ Fixed (`efdab4e`) — build→scan→push, single SARIF gate |
 | B1 (April). No securityContext | ✅ Fixed (`f038700`) — pod+container on both bases and the red sidecar, runtime-verified under `--read-only --user 65534 --cap-drop ALL` |
-| 3. `color/` fifth duplicate with dead workflow | ⬜ Open |
+| 3. `color/` fifth duplicate with dead workflow | ✅ Fixed 2026-07-07 — stripped to `demo-flags.goff.yaml` + README; dead workflow, go module, and dependabot entries removed |
 | 4. order-svc CI/CD blind spot | ⬜ Open (no CI matrix entry, no dependabot, no release-please, absent from CLAUDE.md) |
 | 5. Dependabot gaps (`github-actions` ecosystem, order-svc) | ⬜ Open — note the action pins (checkout v7, gitleaks v3) had to be bumped by hand, which is exactly what the missing ecosystem entry would automate |
 | 6. `detect-changes` breaks on zero SHA (force-push/first push) | ⬜ Open |
@@ -81,9 +81,9 @@ None block the used targets (`compile/test/lint/sec` are fine — CI passes), bu
 
 `build-and-publish.yaml` pushed (including `:latest`) before the `exit-code: 1` Trivy scan, so a CRITICAL finding failed the job after the vulnerable image was public — and Kargo's dev warehouse would auto-promote the `sha-*` tag. There were also two Trivy steps at two different pinned versions scanning the same image. Fixed: amd64 build with `load: true` → single Trivy scan (SARIF + `exit-code: 1`, upload on `if: always()`) → multi-arch push from cache → cosign + SLSA only after a clean scan.
 
-### 3. `color/` is a fifth copy of the color service with a dead workflow — ⬜ open
+### 3. `color/` is a fifth copy of the color service with a dead workflow — ✅ fixed 2026-07-07
 
-Tracked root-level `color/` duplicates the whole service (module `github.com/davidaparicio/color`, own release-please manifest/CHANGELOG). Its `color/.github/workflows/release.yaml` can never run — GitHub only executes workflows from the repo root. Its only live role: dev/staging git-sync sidecars pull `color/demo-flags.goff.yaml` as the flag source (deliberately outside CI's `projects/**` path filter, so flag flips don't trigger builds). Recommendation stands: strip to the flag file + README; delete the dead workflow and release-please manifest.
+Tracked root-level `color/` duplicates the whole service (module `github.com/davidaparicio/color`, own release-please manifest/CHANGELOG). Its `color/.github/workflows/release.yaml` can never run — GitHub only executes workflows from the repo root. Its only live role: dev/staging git-sync sidecars pull `color/demo-flags.goff.yaml` as the flag source (deliberately outside CI's `projects/**` path filter, so flag flips don't trigger builds). **Fixed:** stripped to `demo-flags.goff.yaml` plus a README documenting the mechanism; deleted the dead workflow, release-please manifest, go module, assets, Makefile, and Dockerfile; removed the two `/color` dependabot entries; documented the directory in CLAUDE.md. The git-sync e2e tests and the red dev/staging sidecar paths are unaffected (verified).
 
 ### 4. `order-svc` exists in a CI/CD blind spot — ⬜ open
 

@@ -8,6 +8,8 @@ GitOps microservices platform demonstrating progressive delivery with ArgoCD and
 
 ```
 projects/          # Go microservices (red, blue, green, yellow, git-sync)
+color/             # demo-flags.goff.yaml only — flag source pulled by the git-sync
+                   # sidecar (outside projects/** so flag edits don't trigger CI builds)
 k8s/               # Kubernetes manifests (Kustomize: base + dev/staging/prod overlays)
 argocd/            # ArgoCD ApplicationSet + project config
 kargo/             # Kargo progressive delivery (config.yaml is the single source of truth)

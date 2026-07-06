@@ -1,18 +1,16 @@
-# webcolor
+# color/ — live feature-flag source
 
-Simple web server for colorful Kubernetes demos!
+This directory intentionally contains only `demo-flags.goff.yaml`.
 
-This is a web server that serves a single HTML page with
-a background color that will basically be `${HOSTNAME%%-*}`
-so if you create a deployment named `pink`, the pods
-will be named `pink-xxxxyyyyzzzz-abcde` and therefore
-the web server will serve a pink background.
+It is the **GO Feature Flag file that the git-sync sidecar serves to the red
+service in development and staging**: the sidecar clones this repo, copies
+`color/demo-flags.goff.yaml` into a shared volume mounted at `/app/config/`,
+and red polls it (see `k8s/overlays/{development,staging}/red/kustomization.yaml`).
 
-If you create deployments named `blue` and `green`
-they will serve web page with respectively
-blue and green backgrounds, so you can do very
-literal blue/green deployment demos.
+Living outside `projects/**` is deliberate: editing this file flips flags on
+the running pods within the sync interval **without triggering any CI build or
+image publish** (both workflows filter on `projects/**`).
 
-There are two images on the Docker Hub using that code:
-- `jpetazzo/webcolor` (listens on port 8000)
-- `jpetazzo/color` (listens on port 80, shows extra info)
+The full color web service source lives in `projects/{red,blue,green,yellow}/`.
+A historical copy of the service (a fork of jpetazzo/color) used to live here
+and was removed — see git history if you need it.
