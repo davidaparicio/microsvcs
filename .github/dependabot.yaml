@@ -36,6 +36,11 @@ updates:
     schedule:
       interval: daily
 
+  - package-ecosystem: gomod
+    directory: /projects/order-svc
+    schedule:
+      interval: daily
+
   - package-ecosystem: docker
     directory: /projects/red/docker
     schedule:

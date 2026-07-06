@@ -8,6 +8,8 @@ GitOps microservices platform demonstrating progressive delivery with ArgoCD and
 
 ```
 projects/          # Go microservices (red, blue, green, yellow, git-sync)
+                   # + order-svc: PostgreSQL migration PoC (compose-only, not
+                   # deployed to k8s, not in CI — see projects/order-svc/poc.md)
 color/             # demo-flags.goff.yaml only — flag source pulled by the git-sync
                    # sidecar (outside projects/** so flag edits don't trigger CI builds)
 k8s/               # Kubernetes manifests (Kustomize: base + dev/staging/prod overlays)
@@ -48,8 +50,11 @@ Full platform:
 ## Key Endpoints (each color service)
 
 - `GET /` — HTML UI (colored boxes)
-- `GET /healthz` — liveness probe
-- `GET /readyz` — readiness probe
+- `GET /version` — version + git commit (JSON)
+- `GET /healthz` — health check (both liveness and readiness probes use it)
+- `GET /metrics` — render-time metrics (Prometheus text format)
+
+git-sync additionally exposes `GET /readyz` (ready once the first sync succeeds).
 
 ## Deployment Flow
 
