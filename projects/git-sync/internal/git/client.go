@@ -91,3 +91,8 @@ func (c *Client) getHeadCommit() (string, error) {
 func (c *Client) WorkDir() string {
 	return c.workDir
 }
+
+// Close removes the temporary work directory created by NewClient.
+func (c *Client) Close() error {
+	return os.RemoveAll(c.workDir)
+}

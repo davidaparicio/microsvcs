@@ -67,9 +67,10 @@ while [[ $# -gt 0 ]]; do
             echo "  - Kargo ${KARGO_VERSION}"
             echo "  - Ingress NGINX ${INGRESS_NGINX_VERSION}"
             echo ""
-            echo "Credentials:"
-            echo "  ArgoCD:  admin / admin"
-            echo "  Kargo:   admin / admin"
+            echo "Credentials (defaults, override via kargo/.env):"
+            echo "  ArgoCD:  admin / admin  (ARGOCD_ADMIN_PASSWORD_HASH)"
+            echo "  Kargo:   admin / admin  (KARGO_ADMIN_PASSWORD_HASH)"
+            echo "  Kargo token signing key: random per install (KARGO_TOKEN_SIGNING_KEY)"
             exit 0
             ;;
         *)
@@ -99,6 +100,44 @@ check_dependency "kubectl" "https://kubernetes.io/docs/tasks/tools/"
 check_dependency "helm" "https://helm.sh/docs/intro/install/"
 echo -e "  ${GREEN}✅${NC} All dependencies installed"
 echo ""
+
+# Credentials configuration
+# Optional overrides, set in the environment or in kargo/.env:
+#   ARGOCD_ADMIN_PASSWORD_HASH  bcrypt hash for the ArgoCD admin user
+#   KARGO_ADMIN_PASSWORD_HASH   bcrypt hash for the Kargo admin account
+#   KARGO_TOKEN_SIGNING_KEY     symmetric key Kargo uses to sign admin tokens
+# Generate a bcrypt hash with: htpasswd -nbBC 10 "" 'yourpassword' | tr -d ':\n'
+if [[ -f "kargo/.env" ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    source kargo/.env 2>/dev/null || true
+    set +a
+fi
+
+# Default hashes are bcrypt("admin") — acceptable only for a throwaway local Kind cluster
+# shellcheck disable=SC2016  # literal $ in bcrypt hashes, expansion not wanted
+DEFAULT_ARGOCD_ADMIN_HASH='$2a$10$5vm8wXaSdbuff0m9l21JdevzXBzJFPCi8sy6OOnpZMAG.fOXL7jvO'
+# shellcheck disable=SC2016
+DEFAULT_KARGO_ADMIN_HASH='$2a$10$Zrhhie4vLz5ygtVSaif6o.qN36jgs6vjtMBdM6yrU1FOeiAAMMxOm'
+ARGOCD_ADMIN_PASSWORD_HASH="${ARGOCD_ADMIN_PASSWORD_HASH:-$DEFAULT_ARGOCD_ADMIN_HASH}"
+KARGO_ADMIN_PASSWORD_HASH="${KARGO_ADMIN_PASSWORD_HASH:-$DEFAULT_KARGO_ADMIN_HASH}"
+
+# The signing key can forge Kargo admin tokens, so never use a fixed value:
+# generate a random per-install key unless one is explicitly provided
+if [[ -z "${KARGO_TOKEN_SIGNING_KEY:-}" ]]; then
+    KARGO_TOKEN_SIGNING_KEY="$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64)"
+    echo -e "🔑 Generated a random Kargo token signing key for this install"
+    echo ""
+fi
+
+ARGOCD_CREDS="admin / admin"
+if [[ "$ARGOCD_ADMIN_PASSWORD_HASH" != "$DEFAULT_ARGOCD_ADMIN_HASH" ]]; then
+    ARGOCD_CREDS="admin / <your custom password>"
+fi
+KARGO_CREDS="admin / admin"
+if [[ "$KARGO_ADMIN_PASSWORD_HASH" != "$DEFAULT_KARGO_ADMIN_HASH" ]]; then
+    KARGO_CREDS="admin / <your custom password>"
+fi
 
 # Clean install if requested
 if [[ "$CLEAN_INSTALL" == true ]]; then
@@ -166,13 +205,12 @@ echo ""
 
 # Install ArgoCD
 echo -e "${BLUE}🚀 Installing ArgoCD ${ARGO_CD_CHART_VERSION}...${NC}"
-# shellcheck disable=SC2016
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
   --version "${ARGO_CD_CHART_VERSION}" \
   --namespace argocd \
   --create-namespace \
-  --set 'configs.secret.argocdServerAdminPassword=$2a$10$5vm8wXaSdbuff0m9l21JdevzXBzJFPCi8sy6OOnpZMAG.fOXL7jvO' \
+  --set "configs.secret.argocdServerAdminPassword=${ARGOCD_ADMIN_PASSWORD_HASH}" \
   --set dex.enabled=false \
   --set notifications.enabled=false \
   --set server.service.type=NodePort \
@@ -183,7 +221,7 @@ helm upgrade --install argocd argo-cd \
   --set 'server.extensions.contents[0].url=https://github.com/argoproj-labs/rollout-extension/releases/download/v0.3.3/extension.tar' \
   --wait
 echo -e "  ${GREEN}✅${NC} ArgoCD installed"
-echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31443 (admin/admin)"
+echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31443 (${ARGOCD_CREDS})"
 echo ""
 
 # Install Argo Rollouts
@@ -199,7 +237,6 @@ echo ""
 
 # Install Kargo
 echo -e "${BLUE}📦 Installing Kargo ${KARGO_VERSION}...${NC}"
-# shellcheck disable=SC2016
 helm upgrade --install kargo \
   oci://ghcr.io/akuity/kargo-charts/kargo \
   --version "${KARGO_VERSION}" \
@@ -207,13 +244,13 @@ helm upgrade --install kargo \
   --create-namespace \
   --set api.service.type=NodePort \
   --set api.service.nodePort=31444 \
-  --set api.adminAccount.passwordHash='$2a$10$Zrhhie4vLz5ygtVSaif6o.qN36jgs6vjtMBdM6yrU1FOeiAAMMxOm' \
-  --set api.adminAccount.tokenSigningKey=iwishtowashmyirishwristwatch \
+  --set api.adminAccount.passwordHash="${KARGO_ADMIN_PASSWORD_HASH}" \
+  --set api.adminAccount.tokenSigningKey="${KARGO_TOKEN_SIGNING_KEY}" \
   --set externalWebhooksServer.service.type=NodePort \
   --set externalWebhooksServer.service.nodePort=31445 \
   --wait
 echo -e "  ${GREEN}✅${NC} Kargo installed"
-echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31444 (admin/admin)"
+echo -e "  ${BLUE}🔗${NC} Access: http://localhost:31444 (${KARGO_CREDS})"
 echo ""
 
 # Apply ArgoCD resources
@@ -370,8 +407,8 @@ echo ""
 echo -e "${GREEN}🎉 Setup Complete!${NC}"
 echo ""
 echo "Access Points:"
-echo -e "  ${BLUE}ArgoCD:${NC}  http://localhost:31443 (admin/admin)"
-echo -e "  ${BLUE}Kargo:${NC}   http://localhost:31444 (admin/admin)"
+echo -e "  ${BLUE}ArgoCD:${NC}  http://localhost:31443 (${ARGOCD_CREDS})"
+echo -e "  ${BLUE}Kargo:${NC}   http://localhost:31444 (${KARGO_CREDS})"
 echo ""
 echo "Next Steps:"
 echo "  1. Access ArgoCD to verify applications are synced"

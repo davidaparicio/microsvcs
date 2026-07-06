@@ -31,6 +31,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to initialize syncer: %v\n", err)
 		os.Exit(1)
 	}
+	defer func() { _ = syncer.Close() }()
 
 	// Initial sync
 	fmt.Println("Performing initial sync...")

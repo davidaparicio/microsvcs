@@ -19,3 +19,17 @@ func TestNewClient(t *testing.T) {
 	assert.NotNil(t, client)
 	assert.NotEmpty(t, client.WorkDir())
 }
+
+func TestClientClose(t *testing.T) {
+	cfg := &config.Config{
+		RepoURL: "https://github.com/test/repo.git",
+		Branch:  "main",
+	}
+
+	client, err := git.NewClient(cfg)
+	assert.NoError(t, err)
+	assert.DirExists(t, client.WorkDir())
+
+	assert.NoError(t, client.Close())
+	assert.NoDirExists(t, client.WorkDir())
+}

@@ -14,9 +14,11 @@ import (
 )
 
 type Syncer struct {
-	cfg        *config.Config
-	git        *git.Client
-	mu         sync.RWMutex
+	cfg    *config.Config
+	git    *git.Client
+	syncMu sync.Mutex // serializes Sync runs (cron may overlap a slow sync)
+
+	mu         sync.RWMutex // guards the status fields below only
 	lastSync   time.Time
 	lastCommit string
 	syncCount  int64
@@ -38,8 +40,9 @@ func NewSyncer(cfg *config.Config) (*Syncer, error) {
 }
 
 func (s *Syncer) Sync(ctx context.Context) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	// Hold syncMu (not mu) for the clone/pull so health checks stay responsive
+	s.syncMu.Lock()
+	defer s.syncMu.Unlock()
 
 	fmt.Printf("[%s] Starting sync from %s (branch: %s)\n",
 		time.Now().Format(time.RFC3339), s.cfg.RepoURL, s.cfg.Branch)
@@ -47,27 +50,45 @@ func (s *Syncer) Sync(ctx context.Context) error {
 	// Clone or pull repository
 	commit, err := s.git.Sync(ctx)
 	if err != nil {
-		s.errorCount++
-		s.healthy = false
+		s.recordFailure()
 		return fmt.Errorf("git sync failed: %w", err)
 	}
 
 	// Copy files from source path to target path
 	if err := s.copyFiles(); err != nil {
-		s.errorCount++
-		s.healthy = false
+		s.recordFailure()
 		return fmt.Errorf("file copy failed: %w", err)
 	}
 
+	s.recordSuccess(commit)
+
+	fmt.Printf("[%s] Sync completed successfully (commit: %s)\n",
+		time.Now().Format(time.RFC3339), shortCommit(commit))
+
+	return nil
+}
+
+func (s *Syncer) recordFailure() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.errorCount++
+	s.healthy = false
+}
+
+func (s *Syncer) recordSuccess(commit string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.lastSync = time.Now()
 	s.lastCommit = commit
 	s.syncCount++
 	s.healthy = true
+}
 
-	fmt.Printf("[%s] Sync completed successfully (commit: %s)\n",
-		time.Now().Format(time.RFC3339), commit[:7])
-
-	return nil
+func shortCommit(commit string) string {
+	if len(commit) > 7 {
+		return commit[:7]
+	}
+	return commit
 }
 
 func (s *Syncer) copyFiles() error {
@@ -162,4 +183,9 @@ func (s *Syncer) IsHealthy() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.healthy
+}
+
+// Close releases the git client's temporary work directory.
+func (s *Syncer) Close() error {
+	return s.git.Close()
 }
