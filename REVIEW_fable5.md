@@ -22,7 +22,7 @@
 | 6. `detect-changes` breaks on zero SHA (force-push/first push) | ⬜ Open |
 | 7a. `commonLabels` deprecated | ⬜ Open (warning on every render) |
 | 7b. Pre-commit hooks stale (golangci-lint v1.52.2, gitleaks v8.16.3) | ⬜ Open — now further out of sync with CI's gitleaks-action v3 |
-| 7c. Toolchain drift across go.mod / CI / Dockerfile | ⚠️ Changed shape — see R2-1 below |
+| 7c. Toolchain drift across go.mod / CI / Dockerfile | ✅ Fixed — Dockerfile digest refreshed in #217; CI now uses `go-version-file` (see R2-1) |
 | 7d. CLAUDE.md claims `/readyz` on color services | ⬜ Open (only `/`, `/version`, `/healthz`, `/metrics` exist; probes correctly use `/healthz`) |
 | 7e. `.plumber.yaml` configures `gitlab:` controls on a GitHub repo | ⬜ Open |
 | PR backlog (30 open PRs) | ✅ Consolidated via [#217](https://github.com/davidaparicio/microsvcs/pull/217) (merged 2026-07-03); #174/#188 merged individually after |
@@ -31,11 +31,11 @@
 
 ## Round 2 — new findings (2026-07-05)
 
-### R2-1. CI Go version now mismatches the modules (medium)
+### R2-1. CI Go version now mismatches the modules (medium) — ✅ fixed 2026-07-07
 
 The #217 dependency bumps raised the color modules' `go` directive to **1.26.4** (required by go-feature-flag 1.55.0), and the Dockerfile digest was refreshed to match. But `ci.yaml` still pins `go-version: '1.25'` in all three jobs. It doesn't fail — Go's auto-toolchain downloads 1.26.4 on every run — but that's a silent per-job toolchain download and a version pin that no longer means what it says.
 
-**Fix:** replace `go-version: '1.25'` with `go-version-file: projects/${{ matrix.project }}/go.mod` so CI always follows each module.
+**Fix applied:** all three `ci.yaml` jobs now use `go-version-file: projects/${{ matrix.project }}/go.mod`, so CI always follows each module's declared toolchain (actionlint-validated).
 
 ### R2-2. Makefile has broken targets, copy-pasted 5× (low)
 
@@ -161,6 +161,6 @@ All 30 open PRs were reviewed. **Included in [#217](https://github.com/davidapar
 
 1. ~~**git-sync correctness bugs (B3/B4/S9)**~~ ✅ fixed 2026-07-06 (see April-findings status above).
 2. ~~**`install.sh` secrets (S2)**~~ ✅ fixed 2026-07-07 (see April-findings status above).
-3. **CI Go version (R2-1)** — one-line `go-version-file` change stops the silent toolchain drift the dependency bumps introduced.
+3. ~~**CI Go version (R2-1)**~~ ✅ fixed 2026-07-07 — all three jobs use `go-version-file`.
 
-Next candidates after that: NetworkPolicies (S1), the `color/` cleanup (finding 3), and the dependabot gaps (finding 5).
+All three priorities are done. Next candidates: NetworkPolicies (S1), the `color/` cleanup (finding 3), and the dependabot gaps (finding 5).
