@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: app
+  labels:
+    app.kubernetes.io/name: git-sync
+spec:
+  # Empty selector = every pod in the namespace (each namespace hosts exactly
+  # one service); everything not allowed below is denied.
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    # Only the ingress controller may reach the app port.
+    # namespaceSelector only: a podSelector here would get the overlay's
+    # commonLabels injected by kustomize and never match the controller pods.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080

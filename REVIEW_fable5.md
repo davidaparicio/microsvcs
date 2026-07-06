@@ -131,9 +131,9 @@ All 30 open PRs were reviewed. **Included in [#217](https://github.com/davidapar
 - **B3/B4/S9 — git-sync bugs:** `Sync` now serializes on a dedicated `syncMu` and takes the status lock only to update fields (probes answer instantly mid-clone, regression-tested); `shortCommit()` guards the log slice; `Client.Close()`/`Syncer.Close()` remove the temp workdir (deferred in main). Verified with `-race`, e2e clone tests, and a hardened-container run.
 - **S2 — `install.sh` secrets:** admin password hashes are now overridable via env or `kargo/.env` (defaults remain bcrypt("admin") for the throwaway demo cluster); the Kargo `tokenSigningKey` is **randomly generated per install** unless explicitly pinned — the forgeable fixed key is gone. Verified with stubbed kind/kubectl/helm runs: key differs across installs, overrides propagate, shellcheck clean.
 
-**Still open, in priority order:**
+- **S1 — NetworkPolicies:** fixed 2026-07-07. Every service namespace now carries an ingress policy (`podSelector: {}` = all pods, one service per namespace): only the `ingress-nginx` namespace may reach port 8080, everything else is denied. The `from` clause uses a namespaceSelector only (a podSelector would be mutated by kustomize commonLabels). `NetworkPolicy` added to the AppProject whitelist so ArgoCD can sync it. All 15 overlays verified to render one. Note: modern Kind enforces these (kube-network-policies), so this is live policy, not documentation.
 
-- **S1 — no NetworkPolicies** anywhere.
+**Still open, in priority order:**
 - **S6 — env-var patches by array index** (`env/4/value`) in git-sync overlays; base env order is now load-bearing.
 - **S3 — code duplication**, still 5 copies including `color/`; round-2 Makefile defects (R2-2) add weight.
 - S4 (assert-not-nil tests — unchanged, 5 test funcs of which 4 assert construction), S5 (sidecar patch duplicated dev/staging), S7 (no PDB), S8 (no startupProbe), S10 (KARGO.md staleness, incl. `docker.io` reference).
