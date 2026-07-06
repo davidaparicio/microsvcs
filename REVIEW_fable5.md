@@ -17,13 +17,13 @@
 | 2. Images pushed before blocking Trivy scan + duplicate Trivy steps | ✅ Fixed (`efdab4e`) — build→scan→push, single SARIF gate |
 | B1 (April). No securityContext | ✅ Fixed (`f038700`) — pod+container on both bases and the red sidecar, runtime-verified under `--read-only --user 65534 --cap-drop ALL` |
 | 3. `color/` fifth duplicate with dead workflow | ✅ Fixed 2026-07-07 — stripped to `demo-flags.goff.yaml` + README; dead workflow, go module, and dependabot entries removed |
-| 4. order-svc CI/CD blind spot | ⬜ Open (no CI matrix entry, no dependabot, no release-please, absent from CLAUDE.md) |
-| 5. Dependabot gaps (`github-actions` ecosystem, order-svc) | ⬜ Open — note the action pins (checkout v7, gitleaks v3) had to be bumped by hand, which is exactly what the missing ecosystem entry would automate |
+| 4. order-svc CI/CD blind spot | 🔶 Partially fixed 2026-07-07 — dependabot gomod entry added, documented in CLAUDE.md as a compose-only PoC; deliberately left out of the CI matrix and release-please (its `main` is under `cmd/server`, so the matrix's `go build -o bin/<p> .` wouldn't work as-is; add it if it ever graduates from PoC) |
+| 5. Dependabot gaps (`github-actions` ecosystem, order-svc) | ✅ Fixed 2026-07-07 — `github-actions` ecosystem + order-svc gomod added; stale `/color` entries removed with finding 3 |
 | 6. `detect-changes` breaks on zero SHA (force-push/first push) | ⬜ Open |
 | 7a. `commonLabels` deprecated | ⬜ Open (warning on every render) |
 | 7b. Pre-commit hooks stale (golangci-lint v1.52.2, gitleaks v8.16.3) | ⬜ Open — now further out of sync with CI's gitleaks-action v3 |
 | 7c. Toolchain drift across go.mod / CI / Dockerfile | ✅ Fixed — Dockerfile digest refreshed in #217; CI now uses `go-version-file` (see R2-1) |
-| 7d. CLAUDE.md claims `/readyz` on color services | ⬜ Open (only `/`, `/version`, `/healthz`, `/metrics` exist; probes correctly use `/healthz`) |
+| 7d. CLAUDE.md claims `/readyz` on color services | ✅ Fixed 2026-07-07 — endpoints section corrected (`/version`, `/metrics` added; `/readyz` attributed to git-sync only) |
 | 7e. `.plumber.yaml` configures `gitlab:` controls on a GitHub repo | ⬜ Open |
 | PR backlog (30 open PRs) | ✅ Consolidated via [#217](https://github.com/davidaparicio/microsvcs/pull/217) (merged 2026-07-03); #174/#188 merged individually after |
 
@@ -163,4 +163,6 @@ All 30 open PRs were reviewed. **Included in [#217](https://github.com/davidapar
 2. ~~**`install.sh` secrets (S2)**~~ ✅ fixed 2026-07-07 (see April-findings status above).
 3. ~~**CI Go version (R2-1)**~~ ✅ fixed 2026-07-07 — all three jobs use `go-version-file`.
 
-All three priorities are done. Next candidates: NetworkPolicies (S1), the `color/` cleanup (finding 3), and the dependabot gaps (finding 5).
+All three priorities are done, and the follow-up batch landed 2026-07-07: NetworkPolicies (S1), the `color/` strip-down (finding 3), and the dependabot gaps (finding 5), plus the CLAUDE.md corrections (7d, part of 4).
+
+**Remaining open items:** finding 6 (zero-SHA `detect-changes`), 7a (`commonLabels` deprecation), 7b (stale pre-commit hooks), 7e (`.plumber.yaml` gitlab section), R2-2 (broken Makefile targets ×4), R2-3 (dual yq), R2-4 housekeeping (close stale PRs, `KARGO.md` docker.io ref, unused HPA whitelist entry), and from April: S3 (extract shared Go code — the big one), S4 (test depth), S5 (sidecar patch duplication), S6 (index-based env patches), S7 (PDB), S8 (startupProbe), S10 (KARGO.md staleness).
