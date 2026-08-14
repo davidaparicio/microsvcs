@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: {{ service_name }}-production
+resources:
+- ../../../base
+namePrefix: {{ service_name }}-
+commonLabels:
+  app.kubernetes.io/name: {{ service_name }}
+  app.kubernetes.io/instance: {{ service_name }}-production
+  environment: production
+images:
+- name: quay.io/{{ org }}/app
+  newName: quay.io/{{ org }}/{{ service_name }}
+  newTag: {{ production_image_tag }}
+replicas:
+- name: app
+  count: 3
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: "128Mi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: "200m"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: "256Mi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: "500m"
+  target:
+    kind: Deployment
+- patch: |-
+    - op: replace
+      path: /spec/rules/0/host
+      value: {{ service_name }}.prd.{{ domain_suffix }}
+  target:
+    kind: Ingress

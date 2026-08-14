@@ -1,0 +1,6 @@
+# version     ?=  $(shell git name-rev --tags --name-only $(shell git rev-parse HEAD))# 0.0.1
+version     ?=  $(shell jq -r '."projects/{{ service_name }}"' ../../.release-please-manifest.json)
+target      ?=  {{ service_name }}
+PKG_LDFLAGS := {{ module_root }}/{{ service_name }}/internal/version
+
+include ../Makefile.common

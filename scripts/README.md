@@ -187,6 +187,32 @@ cd projects/blue
 
 ---
 
+## curl_envs.sh
+
+Smoke-test all services across every environment with a single `curl` call per endpoint.
+
+### Usage
+
+```bash
+# Uses NodePort 30080 by default (kind cluster mapping)
+./scripts/curl_envs.sh
+
+# Override the port
+INGRESS_PORT=80 ./scripts/curl_envs.sh
+```
+
+### What It Does
+
+Hits the `/version` endpoint of every color service (red, blue, green, yellow) in
+development, staging, and production, printing the response inline.
+
+### Requirements
+
+- `curl`
+- A running kind cluster with ingress-nginx on port 30080 (see `k8s/kind-config.yaml`)
+
+---
+
 ## Creating Convenient Aliases
 
 You can add these aliases to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):

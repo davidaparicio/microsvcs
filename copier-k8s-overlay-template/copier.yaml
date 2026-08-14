@@ -1,0 +1,42 @@
+# Copier template for Kustomize overlays (development / staging / production)
+# https://github.com/copier-org/copier
+#
+# Usage - generate overlays for a new service:
+#   copier copy ./copier-k8s-overlay-template k8s/overlays
+#
+# Usage - update overlay files after a template change:
+#   copier update k8s/overlays --answers-file k8s/overlays/.copier-answers-blue.yml
+
+_min_copier_version: "9.0.0"
+_subdirectory: template
+
+questions:
+  service_name:
+    type: str
+    help: "Microservice name (must match the projects/ directory name)"
+    placeholder: "mycolor"
+
+  org:
+    type: str
+    help: "Quay.io / registry namespace"
+    default: "davidaparicio"
+
+  domain_suffix:
+    type: str
+    help: "Base domain used for ingress hosts (e.g. 127.0.0.1.nip.io)"
+    default: "127.0.0.1.nip.io"
+
+  dev_image_tag:
+    type: str
+    help: "Image tag deployed to development (typically a short SHA, e.g. sha-4abfffd)"
+    default: "sha-latest"
+
+  staging_image_tag:
+    type: str
+    help: "Image tag deployed to staging (semver, e.g. 1.2.3)"
+    default: "0.1.0"
+
+  production_image_tag:
+    type: str
+    help: "Image tag deployed to production (semver, e.g. 1.2.3)"
+    default: "0.1.0"
