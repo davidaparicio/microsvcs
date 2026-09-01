@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Microsvcs - Landing</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+    p.subtitle {
+      color: #888;
+      margin-bottom: 2.5rem;
+      font-size: 0.95rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.2rem;
+      max-width: 480px;
+      width: 90%;
+    }
+    a.card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.2rem 1.5rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #fff;
+      transition: transform 0.15s, box-shadow 0.15s;
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    a.card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .card .dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .card .label { font-size: 1.1rem; font-weight: 600; }
+
+    .card.red    { background: rgba(220,53,69,0.18); }
+    .card.red .dot    { background: #dc3545; }
+    .card.blue   { background: rgba(0,123,255,0.18); }
+    .card.blue .dot   { background: #007bff; }
+    .card.green  { background: rgba(40,167,69,0.18); }
+    .card.green .dot  { background: #28a745; }
+    .card.yellow { background: rgba(255,193,7,0.18); }
+    .card.yellow .dot { background: #ffc107; }
+
+    footer {
+      margin-top: 3rem;
+      color: #555;
+      font-size: 0.8rem;
+    }
+    footer a { color: #888; }
+
+    @media (max-width: 500px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Microsvcs</h1>
+  <p class="subtitle">Feature-flag color services</p>
+  <div class="grid">
+    <a class="card red" id="link-red">
+      <span class="dot"></span>
+      <span class="label">Red</span>
+    </a>
+    <a class="card blue" id="link-blue">
+      <span class="dot"></span>
+      <span class="label">Blue</span>
+    </a>
+    <a class="card green" id="link-green">
+      <span class="dot"></span>
+      <span class="label">Green</span>
+    </a>
+    <a class="card yellow" id="link-yellow">
+      <span class="dot"></span>
+      <span class="label">Yellow</span>
+    </a>
+  </div>
+  <footer>
+    <a href="https://github.com/davidaparicio/microsvcs" target="_blank">github.com/davidaparicio/microsvcs</a>
+  </footer>
+  <script>
+    // Derive environment from current hostname: color.{env}.127.0.0.1.nip.io
+    (function() {
+      var parts = location.hostname.split('.');
+      var env = parts.length > 1 ? parts[1] : 'dev';
+      var suffix = parts.slice(2).join('.');
+      var services = ['red', 'blue', 'green', 'yellow'];
+      services.forEach(function(s) {
+        var el = document.getElementById('link-' + s);
+        if (el) el.href = location.protocol + '//' + s + '.' + env + '.' + suffix;
+      });
+    })();
+  </script>
+</body>
+</html>
