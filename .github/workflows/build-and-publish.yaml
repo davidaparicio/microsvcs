@@ -235,7 +235,7 @@ jobs:
           COSIGN_EXPERIMENTAL: "true"
 
       - name: Generate SLSA provenance attestation
-        uses: actions/attest-build-provenance@db473fddc028af60658334401dc6fa3ffd8669fd # v2.3.0
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ${{ steps.tags.outputs.primary_tag }}
           subject-digest: ${{ steps.build.outputs.digest }}
