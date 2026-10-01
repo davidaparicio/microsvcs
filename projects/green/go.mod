@@ -4,7 +4,7 @@ go 1.26.6
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/labstack/echo/v4 v4.15.4
+	github.com/labstack/echo/v4 v4.16.0
 	github.com/stretchr/testify v1.12.1
 	github.com/thomaspoignant/go-feature-flag v1.55.3
 )
