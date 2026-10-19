@@ -76,9 +76,6 @@ Run `kargo/generate.sh` to regenerate manifests in `kargo/generated/`.
 
 ## Known Issues
 
-### Red config path divergence
-Red's `webcolor_ff.go:84` defaults to `/app/config/demo-flags.goff.yaml` while blue/green/yellow use `./demo-flags.goff.yaml`. All services bake the file into the image at `/app/demo-flags.goff.yaml`. Red works in dev/staging (git-sync sidecar mounts at `/app/config/`) but crashes in production without the sidecar.
-
 ### git-sync not in ArgoCD
 git-sync is intentionally excluded from `argocd/applicationset.yaml` (commented out). Kargo stages exist and report healthy for dev/staging, but this is a false green — those stages only commit to git without an `argocd-update` step, so nothing actually deploys. Production stage fails because it does have `argocd-update`.
 

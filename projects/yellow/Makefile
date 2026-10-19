@@ -65,7 +65,7 @@ run: ## Run the server
 
 .PHONY: goreleaser #oldv: 1.18.2 
 goreleaser: ## Run goreleaser directly at the pinned version 🛠
-	go run github.com/goreleaser/v2@v2.3.2 $(GORELEASER_FLAGS)
+	go run github.com/goreleaser/goreleaser/v2@v2.3.2 $(GORELEASER_FLAGS)
 
 .PHONY: dockerbuild
 dockerbuild: ## Docker build 🛠
@@ -125,7 +125,7 @@ lint: ## Runs the linter
 
 .PHONY: check-editorconfig
 check-editorconfig: ## Use to check if the codebase follows editorconfig rules
-	@docker run --rm --volume=$(shell PWD):/check mstruebing/editorconfig-checker
+	@docker run --rm --volume=$(CURDIR):/check mstruebing/editorconfig-checker
 
 .PHONY: doc
 doc: ## Launch the offline Go documentation 📚

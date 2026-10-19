@@ -17,6 +17,9 @@ replicas:
   count: 3
 patches:
 - patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args
+      value: ["-configFile=/app/demo-flags.goff.yaml"]
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests/memory
       value: "128Mi"

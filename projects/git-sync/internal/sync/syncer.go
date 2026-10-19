@@ -138,6 +138,9 @@ func (s *Syncer) copyFiles() error {
 	})
 }
 
+// copyFile writes to a temp file in dst's directory and renames it into place,
+// so readers polling dst (the color services reload flags every second) never
+// see a truncated file.
 func copyFile(src, dst string) error {
 	sourceFile, err := os.Open(src)
 	if err != nil {
@@ -145,22 +148,31 @@ func copyFile(src, dst string) error {
 	}
 	defer func() { _ = sourceFile.Close() }()
 
-	destFile, err := os.Create(dst)
+	sourceInfo, err := sourceFile.Stat()
 	if err != nil {
 		return err
 	}
-	defer func() { _ = destFile.Close() }()
 
-	if _, err := io.Copy(destFile, sourceFile); err != nil {
+	tmpFile, err := os.CreateTemp(filepath.Dir(dst), "."+filepath.Base(dst)+".tmp-*")
+	if err != nil {
+		return err
+	}
+	tmpName := tmpFile.Name()
+	defer func() { _ = os.Remove(tmpName) }() // no-op once renamed
+
+	if _, err := io.Copy(tmpFile, sourceFile); err != nil {
+		_ = tmpFile.Close()
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
 		return err
 	}
 
 	// Preserve file permissions
-	sourceInfo, err := os.Stat(src)
-	if err != nil {
+	if err := os.Chmod(tmpName, sourceInfo.Mode()); err != nil {
 		return err
 	}
-	return os.Chmod(dst, sourceInfo.Mode())
+	return os.Rename(tmpName, dst)
 }
 
 func (s *Syncer) GetStatus() map[string]any {

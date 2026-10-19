@@ -81,7 +81,7 @@ type SystemInfo struct {
 func main() {
 	version.PrintVersion()
 
-	configFile := flag.String("configFile", "/app/config/demo-flags.goff.yaml", "path to feature flags file")
+	configFile := flag.String("configFile", "./demo-flags.goff.yaml", "path to feature flags file")
 	flag.Parse()
 
 	if err := ffclient.Init(ffclient.Config{

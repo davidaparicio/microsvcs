@@ -1,11 +1,14 @@
 package sync
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/davidaparicio/microsvcs/projects/git-sync/internal/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Regression test: health checks must not block while a sync is in flight
@@ -56,4 +59,25 @@ func TestShortCommit(t *testing.T) {
 			assert.Equal(t, tt.want, shortCommit(tt.commit))
 		})
 	}
+}
+
+func TestCopyFileReplacesAtomically(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.yaml")
+	dst := filepath.Join(dir, "dst.yaml")
+	require.NoError(t, os.WriteFile(src, []byte("new"), 0640))
+	require.NoError(t, os.WriteFile(dst, []byte("old content"), 0600))
+
+	require.NoError(t, copyFile(src, dst))
+
+	got, err := os.ReadFile(dst)
+	require.NoError(t, err)
+	assert.Equal(t, "new", string(got))
+	info, err := os.Stat(dst)
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0640), info.Mode().Perm())
+
+	entries, err := os.ReadDir(dir)
+	require.NoError(t, err)
+	assert.Len(t, entries, 2, "temp file must not be left behind")
 }
