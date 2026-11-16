@@ -616,6 +616,13 @@ github:
         - ossf/scorecard-action
         - anchore/scan-action
         - getplumber/*
+        - aquasecurity/trivy-action
+        - gitleaks/gitleaks-action
+        - golang/govulncheck-action
+        - golangci/golangci-lint-action
+        - googleapis/release-please-action
+        - sigstore/cosign-installer
+        - step-security/harden-runner
 
     # ===========================================
     # Container images must not use forbidden tags
