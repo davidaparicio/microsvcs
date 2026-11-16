@@ -84,11 +84,10 @@ jobs:
           go-version-file: projects/${{ matrix.project }}/go.mod
           cache-dependency-path: projects/${{ matrix.project }}/go.sum
 
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
       - name: Run govulncheck
-        run: govulncheck ./...
+        uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
+        with:
+          work-dir: projects/${{ matrix.project }}
 
       - name: Run gitleaks # https://github.com/gitleaks/gitleaks-action#migrating-from-v2-to-v3
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
