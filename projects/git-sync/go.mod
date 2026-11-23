@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/go-git/go-git/v5 v5.19.3
-	github.com/labstack/echo/v4 v4.16.4
+	github.com/labstack/echo/v4 v4.16.6
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.12.1
 	gopkg.in/yaml.v3 v3.0.1
